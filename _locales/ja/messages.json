@@ -1,0 +1,59 @@
+{
+  "extName": { "message": "Layout Toggle for Twitter" },
+  "extDescription": { "message": "Twitter（x.com）の左メニュー・「もっと見る」の項目と右サイドバーのブロックを、1 つずつ表示・非表示にする。X Corp. とは関係のない個人の拡張。" },
+
+  "optionsTitle": { "message": "Layout Toggle for Twitter の設定" },
+  "optionsOnLabel": { "message": "オンの項目を表示" },
+  "optionsSaved": { "message": "変更は開いている x.com のタブにすぐ反映される。" },
+  "optionsDisclaimer": { "message": "X Corp. とは関係のない個人の拡張。" },
+
+  "sectionNav": { "message": "左メニュー" },
+  "sectionMore": { "message": "「もっと見る」の中" },
+  "sectionSide": { "message": "右サイドバー" },
+  "sectionLayout": { "message": "レイアウト" },
+
+  "buttonShowAll": { "message": "すべて表示" },
+  "buttonHideAll": { "message": "すべて隠す" },
+  "buttonReset": { "message": "初期状態に戻す" },
+
+  "badgeNew": { "message": "新規" },
+
+  "layoutPromote": { "message": "左メニューを隠した分だけ、「もっと見る」の中から上から順に左メニューへ移す" },
+  "layoutWiden": { "message": "右サイドバーをすべて隠したら、タイムラインを広げる" },
+  "noteWidenOff": { "message": "オフのときは、右サイドバーの場所が空いたまま残る。" },
+  "noteWidenWaiting": { "message": "右サイドバーに表示中の項目が残っている間は効かない。" },
+  "noteMoreNotSeen": { "message": "x.com で「もっと見る」を一度開くと、ここに中の項目が並ぶ。" },
+
+  "notRunYet": { "message": "まだ x.com で動いていない。x.com のタブを開くか読み込み直すと動き出す。それでも変わらないときは、about:addons でこの拡張が x.com で動くよう許可されているかを確かめて。" },
+
+  "item_nav_home": { "message": "ホーム" },
+  "item_nav_explore": { "message": "話題を検索" },
+  "item_nav_notifications": { "message": "通知" },
+  "item_nav_messages": { "message": "チャット" },
+  "item_nav_calls": { "message": "通話" },
+  "item_nav_grok": { "message": "Grok" },
+  "item_nav_history": { "message": "履歴" },
+  "item_nav_premium": { "message": "プレミアム" },
+  "item_nav_profile": { "message": "プロフィール" },
+  "item_nav_more": { "message": "もっと見る" },
+  "item_nav_post": { "message": "ポストするボタン" },
+  "item_nav_account": { "message": "アカウント切り替え" },
+
+  "item_more_lists": { "message": "リスト" },
+  "item_more_communities": { "message": "コミュニティ" },
+  "item_more_studio": { "message": "クリエイタースタジオ" },
+  "item_more_notes": { "message": "コミュニティノート" },
+  "item_more_business": { "message": "ビジネス" },
+  "item_more_ads": { "message": "広告" },
+  "item_more_spaces": { "message": "スペースを作成" },
+  "item_more_settings": { "message": "設定とプライバシー" },
+
+  "item_side_search": { "message": "検索ボックス" },
+  "item_side_premium": { "message": "プレミアムにサブスクライブ" },
+  "item_side_live": { "message": "ライブ放送" },
+  "item_side_news": { "message": "本日のニュース" },
+  "item_side_scores": { "message": "スポーツ速報" },
+  "item_side_trends": { "message": "「いま」を見つけよう（トレンド）" },
+  "item_side_follow": { "message": "おすすめユーザー" },
+  "item_side_footer": { "message": "フッター（利用規約など）" }
+}

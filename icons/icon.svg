@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Layout Toggle for Twitter mark: the author's blog icon (a fox inside a clock
+       face with 12 ticks, the one at 12 o'clock longer and bolder), with the
+       clock face in white and the fox in blue. Not the X or Twitter logo. -->
+  <rect width="64" height="64" rx="14" fill="#14171a"/>
+  <circle cx="32" cy="32" r="27" fill="none" stroke="#ffffff" stroke-width="3"/>
+  <line x1="32.00" y1="13.50" x2="32.00" y2="6.50" stroke="#ffffff" stroke-width="3.6"/>
+  <line x1="43.00" y1="12.95" x2="44.75" y2="9.92" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="51.05" y1="21.00" x2="54.08" y2="19.25" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="54.00" y1="32.00" x2="57.50" y2="32.00" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="51.05" y1="43.00" x2="54.08" y2="44.75" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="43.00" y1="51.05" x2="44.75" y2="54.08" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="32.00" y1="54.00" x2="32.00" y2="57.50" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="21.00" y1="51.05" x2="19.25" y2="54.08" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="12.95" y1="43.00" x2="9.92" y2="44.75" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="10.00" y1="32.00" x2="6.50" y2="32.00" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="12.95" y1="21.00" x2="9.92" y2="19.25" stroke="#ffffff" stroke-width="2.2"/>
+  <line x1="21.00" y1="12.95" x2="19.25" y2="9.92" stroke="#ffffff" stroke-width="2.2"/>
+  <path transform="translate(32 33) scale(0.85) translate(-32 -33)" d="M18 17 L27 26 L37 26 L46 17 L45 35 L32 50 L19 35 Z" fill="#1da1f2"/>
+</svg>

@@ -1,0 +1,24 @@
+{
+  // 型の検査だけを行う（npm run typecheck）。dist/ は scripts/build.mjs（esbuild）が作る
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // esbuild はファイルを 1 つずつ変換する
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    // node のテストが src/registry.ts をそのまま読むので、import に .ts を書く
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    // Firefox の中だけで動くので @types/node は読まない
+    "types": []
+  },
+  "include": ["src"]
+}

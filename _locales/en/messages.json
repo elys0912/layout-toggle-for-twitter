@@ -1,0 +1,59 @@
+{
+  "extName": { "message": "Layout Toggle for Twitter" },
+  "extDescription": { "message": "Show or hide each item in the Twitter (x.com) left menu and More menu, and each block in the right sidebar. Not affiliated with X Corp." },
+
+  "optionsTitle": { "message": "Layout Toggle for Twitter settings" },
+  "optionsOnLabel": { "message": "On = shown" },
+  "optionsSaved": { "message": "Changes apply to open x.com tabs right away." },
+  "optionsDisclaimer": { "message": "An independent add-on, not affiliated with X Corp." },
+
+  "sectionNav": { "message": "Left menu" },
+  "sectionMore": { "message": "Inside \"More\"" },
+  "sectionSide": { "message": "Right sidebar" },
+  "sectionLayout": { "message": "Layout" },
+
+  "buttonShowAll": { "message": "Show all" },
+  "buttonHideAll": { "message": "Hide all" },
+  "buttonReset": { "message": "Reset to defaults" },
+
+  "badgeNew": { "message": "New" },
+
+  "layoutPromote": { "message": "For each left menu item you hide, move one item from \"More\" into the left menu, top first" },
+  "layoutWiden": { "message": "Widen the timeline when every right sidebar block is hidden" },
+  "noteWidenOff": { "message": "When off, the right sidebar's space stays empty." },
+  "noteWidenWaiting": { "message": "Takes effect only after every right sidebar block is hidden." },
+  "noteMoreNotSeen": { "message": "Open \"More\" on x.com once and its items will appear here." },
+
+  "notRunYet": { "message": "Not running on x.com yet. Open or reload an x.com tab to start. If nothing changes, check in about:addons that this add-on is allowed to run on x.com." },
+
+  "item_nav_home": { "message": "Home" },
+  "item_nav_explore": { "message": "Explore" },
+  "item_nav_notifications": { "message": "Notifications" },
+  "item_nav_messages": { "message": "Chat" },
+  "item_nav_calls": { "message": "Calls" },
+  "item_nav_grok": { "message": "Grok" },
+  "item_nav_history": { "message": "History" },
+  "item_nav_premium": { "message": "Premium" },
+  "item_nav_profile": { "message": "Profile" },
+  "item_nav_more": { "message": "More" },
+  "item_nav_post": { "message": "Post button" },
+  "item_nav_account": { "message": "Account switcher" },
+
+  "item_more_lists": { "message": "Lists" },
+  "item_more_communities": { "message": "Communities" },
+  "item_more_studio": { "message": "Creator Studio" },
+  "item_more_notes": { "message": "Community Notes" },
+  "item_more_business": { "message": "Business" },
+  "item_more_ads": { "message": "Ads" },
+  "item_more_spaces": { "message": "Create your Space" },
+  "item_more_settings": { "message": "Settings and privacy" },
+
+  "item_side_search": { "message": "Search box" },
+  "item_side_premium": { "message": "Subscribe to Premium" },
+  "item_side_live": { "message": "Live on X" },
+  "item_side_news": { "message": "Today's News" },
+  "item_side_scores": { "message": "Sports scores" },
+  "item_side_trends": { "message": "What's happening (trends)" },
+  "item_side_follow": { "message": "Who to follow" },
+  "item_side_footer": { "message": "Footer (Terms and more)" }
+}
