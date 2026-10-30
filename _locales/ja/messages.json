@@ -49,6 +49,7 @@
   "item_more_settings": { "message": "設定とプライバシー" },
 
   "item_side_search": { "message": "検索ボックス" },
+  "item_side_filters": { "message": "検索フィルター（検索のページ）" },
   "item_side_premium": { "message": "プレミアムにサブスクライブ" },
   "item_side_live": { "message": "ライブ放送" },
   "item_side_news": { "message": "本日のニュース" },

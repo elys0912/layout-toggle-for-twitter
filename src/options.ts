@@ -23,6 +23,7 @@ interface SectionDefinition {
 // 右サイドバーは x.com の画面の上から順に並べる。SIDE_BLOCKS は判定の優先順なので、画面の並びとは違う
 const SIDE_DISPLAY_ORDER: readonly string[] = [
   'side.search',
+  'side.filters',
   'side.premium',
   'side.live',
   'side.news',

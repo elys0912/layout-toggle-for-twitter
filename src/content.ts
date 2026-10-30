@@ -13,6 +13,7 @@ import {
   computePromotions,
   identifyLink,
   isBuiltinKey,
+  mergeHeadingBlocks,
   resolveHidden,
   resolveLayout,
   shouldWiden,
@@ -170,17 +171,18 @@ function markSidebar(): string[] {
   const container = column ? locateBlockContainer(column) : null;
   if (!container) return [];
 
+  const blocks = [...container.children].filter((block): block is HTMLElement => block instanceof HTMLElement);
+  const blockKeys = mergeHeadingBlocks(blocks.map(classifySideBlock));
   const keys: string[] = [];
-  for (const block of container.children) {
-    if (!(block instanceof HTMLElement)) continue;
 
-    const key = classifySideBlock(block);
-    if (!key) continue;
+  blocks.forEach((block, index) => {
+    const key = blockKeys[index];
+    if (!key) return;
 
     setMark(block, key);
     keys.push(key);
     if (key.startsWith('side.h:')) recordSeen(key, { label: key.slice('side.h:'.length) });
-  }
+  });
 
   return keys;
 }
@@ -249,6 +251,7 @@ function buildClone(template: HTMLElement, item: MoreItem): HTMLElement {
     clone.removeAttribute(name);
   }
   clone.dataset.xltClone = item.key;
+  clone.dataset.xltCloneSignature = buildCloneSignature(item);
   clone.setAttribute('href', item.href);
   clone.setAttribute('aria-label', label);
   replaceIcon(clone, item.iconPaths ?? []);
@@ -258,12 +261,17 @@ function buildClone(template: HTMLElement, item: MoreItem): HTMLElement {
   return clone;
 }
 
-/** 複製を、移す項目の並びと同じにする。並びが変わっていなければ触らない */
+/** 複製の中身を表す文字列。表示の言語を変えると名前が変わるので、key だけでなく名前・リンク先・アイコンも含める */
+function buildCloneSignature(item: MoreItem): string {
+  return JSON.stringify([item.key, item.label ?? '', item.href, item.iconPaths ?? []]);
+}
+
+/** 複製を、移す項目の並びと中身に合わせる。どちらも変わっていなければ触らない */
 function syncClones(nav: Element, promotions: readonly MoreItem[]): void {
   const existing = [...nav.querySelectorAll<HTMLElement>(':scope > [data-xlt-clone]')];
-  const existingKeys = existing.map((element) => element.dataset.xltClone).join('\n');
-  const wantedKeys = promotions.map((item) => item.key).join('\n');
-  if (existingKeys === wantedKeys) return;
+  const existingSignatures = existing.map((element) => element.dataset.xltCloneSignature).join('\n');
+  const wantedSignatures = promotions.map(buildCloneSignature).join('\n');
+  if (existingSignatures === wantedSignatures) return;
 
   existing.forEach((element) => element.remove());
   const template = pickTemplate(nav);

@@ -49,6 +49,7 @@
   "item_more_settings": { "message": "Settings and privacy" },
 
   "item_side_search": { "message": "Search box" },
+  "item_side_filters": { "message": "Search filters (search page)" },
   "item_side_premium": { "message": "Subscribe to Premium" },
   "item_side_live": { "message": "Live on X" },
   "item_side_news": { "message": "Today's News" },

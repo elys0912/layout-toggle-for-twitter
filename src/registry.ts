@@ -83,6 +83,8 @@ export const MORE_ITEMS: readonly LinkRule[] = [
 export const SIDE_BLOCKS: readonly SideBlockRule[] = [
   { key: 'side.search', selector: '[data-testid="SearchBox_Search_Input"]' },
   { key: 'side.premium', selector: 'a[href="/i/premium_sign_up"]' },
+  // 検索のページだけに出る。見出しは別のブロックに分かれている（mergeHeadingBlocks で同じ項目にまとめる）
+  { key: 'side.filters', selector: '[data-testid="searchFiltersAdvancedSearch"], [data-testid="radioGroupPeople"]' },
   { key: 'side.follow', selector: '[data-testid="UserCell"], a[href^="/i/connect_people"]' },
   { key: 'side.footer', selector: 'nav a[href*="/tos"]' },
   { key: 'side.news', selector: '[data-testid="news_sidebar"]' },
@@ -145,6 +147,22 @@ export function classifySideBlock(block: QueryableBlock): string | null {
   const title = (block.querySelector('h2')?.textContent ?? '').trim();
 
   return title ? `side.h:${title}` : null;
+}
+
+// 見出しと中身が別のブロックに分かれている項目。直前の見出しだけのブロックを同じ項目として扱う
+const KEYS_WITH_SEPARATE_HEADING: readonly string[] = ['side.filters'];
+
+/**
+ * 右サイドバーの並びの key を受け取り、見出しが別のブロックに分かれた項目の見出しを、中身と同じ key にした並びを返す。
+ * 例：['side.h:検索フィルター', 'side.filters'] → ['side.filters', 'side.filters']
+ */
+export function mergeHeadingBlocks(keys: readonly (string | null)[]): (string | null)[] {
+  return keys.map((key, index) => {
+    const next = keys[index + 1];
+    const isHeadingOfNext = key?.startsWith('side.h:') && next !== undefined && next !== null && KEYS_WITH_SEPARATE_HEADING.includes(next);
+
+    return isHeadingOfNext ? next : key;
+  });
 }
 
 export function isBuiltinKey(key: string): boolean {

@@ -15,6 +15,7 @@ import {
   classifySideBlock,
   computePromotions,
   identifyLink,
+  mergeHeadingBlocks,
   resolveHidden,
   shouldWiden,
 } from '../src/registry.ts';
@@ -53,10 +54,11 @@ describe('「もっと見る」の項目の見分け方', () => {
 });
 
 describe('右サイドバーのブロックの見分け方', () => {
-  it('2026-10-29 に見た 8 種類のブロックを、それぞれの手がかりで見分ける', () => {
+  it('2026-10-29〜30 に見た 9 種類のブロックを、それぞれの手がかりで見分ける', () => {
     const cases = [
       ['[data-testid="SearchBox_Search_Input"]', 'side.search'],
       ['a[href="/i/premium_sign_up"]', 'side.premium'],
+      ['[data-testid="searchFiltersAdvancedSearch"]', 'side.filters'],
       ['[data-testid="UserCell"]', 'side.follow'],
       ['nav a[href*="/tos"]', 'side.footer'],
       ['[data-testid="news_sidebar"]', 'side.news'],
@@ -78,6 +80,12 @@ describe('右サイドバーのブロックの見分け方', () => {
 
   it('X が新しいブロックを足したら、見出しの文字で別の項目として扱う', () => {
     assert.equal(classifySideBlock(fakeBlock({ heading: '  新しいブロック ' })), 'side.h:新しいブロック');
+  });
+
+  it('検索のページで検索フィルターを隠すと見出しも一緒に隠れ、ほかのブロックの上の見出しは巻き込まない', () => {
+    const merged = mergeHeadingBlocks(['side.h:検索フィルター', 'side.filters', 'side.h:別の見出し', 'side.news']);
+
+    assert.deepEqual(merged, ['side.filters', 'side.filters', 'side.h:別の見出し', 'side.news']);
   });
 
   it('検索ボックスの下の中身の無い要素は、余白として扱う', () => {
