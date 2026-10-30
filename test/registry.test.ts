@@ -10,13 +10,16 @@ import {
   NAV_ITEMS,
   SIDE_BLOCKS,
   SPACER_KEY,
+  applyStorageChanges,
   buildHiddenCss,
   buildMessageName,
+  buildUnknownLinkKey,
   classifySideBlock,
   computePromotions,
   identifyLink,
   mergeHeadingBlocks,
   resolveHidden,
+  resolveLayout,
   shouldWiden,
 } from '../src/registry.ts';
 import type { MoreItem, QueryableBlock } from '../src/registry.ts';
@@ -46,10 +49,26 @@ function readMessages(locale: string): Record<string, unknown> {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 
+describe('左メニューの項目の見分け方', () => {
+  it('testid のある項目は testid で、testid の無い項目は href で見分ける', () => {
+    assert.equal(identifyLink({ testid: 'AppTabBar_Home_Link', href: '/home' }, NAV_ITEMS), 'nav.home');
+    assert.equal(identifyLink({ testid: null, href: '/i/grok' }, NAV_ITEMS), 'nav.grok');
+  });
+
+  it('X が表に無い項目を足したら、href から key を作って別の項目として扱う', () => {
+    assert.equal(identifyLink({ testid: null, href: '/i/bookmarks' }, NAV_ITEMS), null);
+    assert.equal(buildUnknownLinkKey('nav', '/i/bookmarks'), 'nav.href:/i/bookmarks');
+  });
+});
+
 describe('「もっと見る」の項目の見分け方', () => {
   it('リストは誰のアカウントでも見分け、リストの中のページは別物として扱う', () => {
     assert.equal(identifyLink({ testid: null, href: '/someone_123/lists' }, MORE_ITEMS), 'more.lists');
     assert.equal(identifyLink({ testid: null, href: '/someone/lists/123' }, MORE_ITEMS), null);
+  });
+
+  it('広告は x.com の外へのリンク先で見分ける', () => {
+    assert.equal(identifyLink({ testid: null, href: 'https://ads.x.com/?ref=menu' }, MORE_ITEMS), 'more.ads');
   });
 });
 
@@ -65,6 +84,18 @@ describe('右サイドバーのブロックの見分け方', () => {
       ['[data-testid$="_scores_sidebar"]', 'side.scores'],
       ['[data-testid="trend"]', 'side.trends'],
       ['[data-testid="pill-contents-container"]', 'side.live'],
+    ] as const;
+
+    const actual = cases.map(([part]) => classifySideBlock(fakeBlock({ parts: [part] })));
+
+    assert.deepEqual(actual, cases.map(([, key]) => key));
+  });
+
+  it('手がかりが 2 つあるブロックは、2 つ目の手がかりだけでも見分ける', () => {
+    const cases = [
+      ['[data-testid="radioGroupPeople"]', 'side.filters'],
+      ['a[href^="/i/connect_people"]', 'side.follow'],
+      ['a[href^="/explore/tabs/"]', 'side.trends'],
     ] as const;
 
     const actual = cases.map(([part]) => classifySideBlock(fakeBlock({ parts: [part] })));
@@ -110,6 +141,24 @@ describe('表示・非表示の設定', () => {
   it('検索ボックスを隠すと、その下の余白も一緒に隠れる', () => {
     assert.equal(resolveHidden({}, SPACER_KEY), false);
     assert.equal(resolveHidden({ hidden: { 'side.search': true } }, SPACER_KEY), true);
+  });
+
+  it('リセットすると隠す設定と並べ方が初期設定に戻り、見つけた項目の記録は残る', () => {
+    const stored = {
+      hidden: { 'nav.grok': false, 'nav.home': true },
+      layout: { widen: true, promote: false },
+      seen: { 'nav.href:/i/bookmarks': { label: 'ブックマーク' } },
+    };
+
+    // 設定画面のリセットは hidden と layout を消す。storage.onChanged には newValue の無い変更として届く
+    const reset = applyStorageChanges(stored, { hidden: {}, layout: {} });
+
+    assert.deepEqual(
+      ['nav.grok', 'nav.home'].map((key) => resolveHidden(reset, key)),
+      [true, false],
+    );
+    assert.deepEqual(resolveLayout(reset), { widen: false, promote: true });
+    assert.deepEqual(reset.seen, stored.seen);
   });
 });
 
@@ -183,7 +232,7 @@ describe('「もっと見る」から左メニューへ移す', () => {
       isHidden: hiddenOf('nav.home', 'nav.explore', 'nav.grok', 'nav.premium'),
     });
 
-    assert.equal(promotions.length, 3);
+    assert.deepEqual(promotions.map((item) => item.key), ['more.lists', 'more.communities', 'more.notes']);
   });
 });
 
