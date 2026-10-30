@@ -269,8 +269,8 @@ describe('タイムラインを広げる', () => {
 describe('隠すための CSS', () => {
   it('見出しに引用符や改行が入っていても、CSS が壊れない', () => {
     assert.equal(
-      buildHiddenCss(['side.h:a"b\\c\nd']),
-      '[data-xlt="side.h:a\\"b\\\\c\\a d"]{display:none!important}',
+      buildHiddenCss(['side.h:a"b\\c\nd\r\ne\ff']),
+      '[data-xlt="side.h:a\\"b\\\\c\\a d\\d \\a e\\c f"]{display:none!important}',
     );
   });
 });

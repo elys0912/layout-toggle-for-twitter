@@ -229,8 +229,15 @@ export function buildHiddenCss(keys: readonly string[]): string {
     .join('\n');
 }
 
+/**
+ * CSS の文字列の中にそのまま置けない文字をエスケープする。例：'a"b' → 'a\"b'、改行 → '\a '
+ * 改行の類（\n・\r・\f）は 16 進のエスケープにする。後ろの空白はエスケープの終わりの印で、
+ * 続く文字が 16 進の数字でもエスケープの一部として読まれない
+ */
 function escapeCssString(text: string): string {
-  return text.replace(/["\\]/g, '\\$&').replace(/\n/g, '\\a ');
+  return text
+    .replace(/["\\]/g, '\\$&')
+    .replace(/[\n\r\f]/g, (newline) => `\\${newline.charCodeAt(0).toString(16)} `);
 }
 
 /** storage.onChanged の変更を取り込んだ新しい状態を返す。newValue が無い項目は消えたものとして扱う */
