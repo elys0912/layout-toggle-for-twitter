@@ -1,5 +1,6 @@
 // x.com の画面の手がかりの表（項目の見分け方と、content script が DOM を探す selector）と、項目の key の作り方。
 // X が画面を変えたら、このファイルを直す。保存値と設定の判定は registry.ts に置く。
+// 項目を足したら _locales の item_<区切り>_<名前> も足す。初期で隠すなら registry.ts の DEFAULT_HIDDEN にも足す。
 // 見分け方は 2026-10-29 に x.com/home（日本語表示）の DOM を読んで決めた。
 
 /** リンクの見分け方。by で、リンクのどの属性を比べるかを決める */
