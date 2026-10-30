@@ -119,43 +119,59 @@ function buildRow(key: string): HTMLElement {
   return row;
 }
 
-function buildSectionButton(messageName: string, keys: readonly string[], hidden: boolean): HTMLButtonElement {
+/** 欄の項目をまとめて切り替えるボタン。shouldHide が true なら全部隠し、false なら全部表示する */
+function buildSectionButton(
+  { messageName, keys, shouldHide }: { messageName: string; keys: readonly string[]; shouldHide: boolean },
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = t(messageName);
   button.addEventListener('click', () => {
-    saveHidden(Object.fromEntries(keys.map((key) => [key, hidden]))).catch(reportError);
+    saveHidden(Object.fromEntries(keys.map((key) => [key, shouldHide]))).catch(reportError);
   });
 
   return button;
+}
+
+function buildSectionHead(section: SectionDefinition, keys: readonly string[]): HTMLElement {
+  const title = document.createElement('h2');
+  title.className = 'section-title';
+  title.textContent = t(section.titleMessage);
+
+  const buttons = document.createElement('div');
+  buttons.className = 'section-buttons';
+  buttons.append(
+    buildSectionButton({ messageName: 'buttonShowAll', keys, shouldHide: false }),
+    buildSectionButton({ messageName: 'buttonHideAll', keys, shouldHide: true }),
+  );
+
+  const head = document.createElement('div');
+  head.className = 'section-head';
+  head.append(title, buttons);
+
+  return head;
+}
+
+/** 「もっと見る」を x.com で一度も開いていないときの案内。開いていれば null */
+function buildMoreNotSeenNote(): HTMLElement | null {
+  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
+  if (hasSeenMoreMenu) return null;
+
+  const note = document.createElement('p');
+  note.className = 'note';
+  note.textContent = t('noteMoreNotSeen');
+
+  return note;
 }
 
 function buildSection(section: SectionDefinition): HTMLElement {
   const keys = listSectionKeys(section);
   const element = document.createElement('section');
   element.className = 'section';
+  element.append(buildSectionHead(section, keys));
 
-  const head = document.createElement('div');
-  head.className = 'section-head';
-  const title = document.createElement('h2');
-  title.className = 'section-title';
-  title.textContent = t(section.titleMessage);
-  const buttons = document.createElement('div');
-  buttons.className = 'section-buttons';
-  buttons.append(
-    buildSectionButton('buttonShowAll', keys, false),
-    buildSectionButton('buttonHideAll', keys, true),
-  );
-  head.append(title, buttons);
-  element.append(head);
-
-  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
-  if (section.prefix === 'more' && !hasSeenMoreMenu) {
-    const hint = document.createElement('p');
-    hint.className = 'note';
-    hint.textContent = t('noteMoreNotSeen');
-    element.append(hint);
-  }
+  const note = section.prefix === 'more' ? buildMoreNotSeenNote() : null;
+  if (note) element.append(note);
 
   element.append(...keys.map(buildRow));
 

@@ -26,7 +26,7 @@ import {
   shouldWiden,
   toStoredState,
 } from './registry.ts';
-import type { LinkAttributes, MoreItem, SeenEntry, StoredState } from './registry.ts';
+import type { LinkAttributes, MoreItem, RunStatus, SeenEntry, StoredState } from './registry.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HEADER_SELECTOR = 'header[role="banner"]';
@@ -51,8 +51,8 @@ let stored: StoredState = {};
 let isLoaded = false;
 let isScanScheduled = false;
 let pendingSeen: Record<string, SeenEntry> = {};
-// status に書く値。ranAt は設定画面が「x.com で動いたか」を判断するのに使う
-let pendingStatus: NonNullable<StoredState['status']> = {};
+// status に書く値
+let pendingStatus: RunStatus = {};
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function isHidden(key: string): boolean {
@@ -342,11 +342,11 @@ function updateCss(presentKeys: readonly string[]): void {
     ...presentKeys,
   ]);
   const presentSideKeys = presentKeys.filter((key) => isKeyInSection(key, 'side'));
-  const widen = shouldWiden({ layout: resolveLayout(stored), presentSideKeys, isHidden });
+  const isWidened = shouldWiden({ layout: resolveLayout(stored), presentSideKeys, isHidden });
   const css = [
     buildHiddenCss([...keys].filter(isHidden)),
     '[data-xlt-promoted]{display:none!important}',
-    widen ? WIDEN_CSS : '',
+    isWidened ? WIDEN_CSS : '',
   ].join('\n');
 
   if (styleElement.textContent !== css) styleElement.textContent = css;

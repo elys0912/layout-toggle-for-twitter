@@ -44,12 +44,17 @@ export interface SeenEntry {
   new?: boolean;
 }
 
+/** content script が動いた記録。ranAt は設定画面が「x.com で動いたか」を判断するのに使う */
+export interface RunStatus {
+  ranAt?: number;
+}
+
 /** storage.local の中身。書くのはこの拡張だけ */
 export interface StoredState {
   hidden?: Record<string, boolean>;
   layout?: Partial<Layout>;
   seen?: Record<string, SeenEntry>;
-  status?: { ranAt?: number };
+  status?: RunStatus;
 }
 
 export interface MoreItem {
