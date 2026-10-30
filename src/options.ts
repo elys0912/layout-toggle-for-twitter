@@ -47,6 +47,10 @@ let stored: StoredState = {};
 // 画面を開いた時点で「新規」だった項目。保存の印は開いた直後に外すが、この画面を閉じるまでは印を出し続ける
 let newKeysOnOpen = new Set<string>();
 
+function reportError(error: unknown): void {
+  console.error('Layout Toggle for Twitter:', error);
+}
+
 function t(name: string): string {
   return browser.i18n.getMessage(name) || name;
 }
@@ -120,7 +124,9 @@ function buildRow(key: string): HTMLElement {
   toggle.className = 'switch';
   toggle.id = id;
   toggle.checked = !isHidden(key);
-  toggle.addEventListener('change', () => saveHidden({ [key]: !toggle.checked }));
+  toggle.addEventListener('change', () => {
+    saveHidden({ [key]: !toggle.checked }).catch(reportError);
+  });
 
   row.append(label, toggle);
 
@@ -131,7 +137,9 @@ function buildSectionButton(messageName: string, keys: readonly string[], hidden
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = t(messageName);
-  button.addEventListener('click', () => saveHidden(Object.fromEntries(keys.map((key) => [key, hidden]))));
+  button.addEventListener('click', () => {
+    saveHidden(Object.fromEntries(keys.map((key) => [key, hidden]))).catch(reportError);
+  });
 
   return button;
 }
@@ -207,9 +215,15 @@ function bindStaticControls(): void {
   const promote = requireElement('layout-promote', HTMLInputElement);
   const widen = requireElement('layout-widen', HTMLInputElement);
 
-  promote.addEventListener('change', () => saveLayout({ promote: promote.checked }));
-  widen.addEventListener('change', () => saveLayout({ widen: widen.checked }));
-  requireElement('reset', HTMLButtonElement).addEventListener('click', () => browser.storage.local.remove(['hidden', 'layout']));
+  promote.addEventListener('change', () => {
+    saveLayout({ promote: promote.checked }).catch(reportError);
+  });
+  widen.addEventListener('change', () => {
+    saveLayout({ widen: widen.checked }).catch(reportError);
+  });
+  requireElement('reset', HTMLButtonElement).addEventListener('click', () => {
+    browser.storage.local.remove(['hidden', 'layout']).catch(reportError);
+  });
 }
 
 browser.storage.onChanged.addListener((changes, area) => {
@@ -227,4 +241,4 @@ browser.storage.local.get(null).then(async (items) => {
   newKeysOnOpen = new Set(Object.keys(seen).filter((key) => seen[key]?.new));
   render();
   await clearNewBadges();
-});
+}).catch(reportError);

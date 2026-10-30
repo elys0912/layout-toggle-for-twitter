@@ -385,6 +385,8 @@ browser.storage.local.get(null).then((items) => {
   pendingStatus = { ...pendingStatus, ranAt: Date.now() };
   scheduleSave();
   scheduleScan();
+}).catch((error: unknown) => {
+  console.error('Layout Toggle for Twitter: 設定を読めなかった', error);
 });
 
 new MutationObserver(scheduleScan).observe(document.documentElement, { childList: true, subtree: true });
