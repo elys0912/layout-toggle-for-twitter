@@ -1,6 +1,6 @@
 // 「もっと見る」から左メニューへ移す項目を決め、複製を置き、メニューの中の元の項目に印を付ける。
 
-import { buildKeyPrefix, computePromotions, isKeyInSection, resolveLayout } from '../registry.ts';
+import { PROMOTED_ATTRIBUTE, buildKeyPrefix, computePromotions, isKeyInSection, resolveLayout } from '../registry.ts';
 import type { MoreItem } from '../registry.ts';
 import { CLONE_ATTRIBUTE, syncClones } from './clone.ts';
 import { readSeen } from './seen-store.ts';
@@ -34,6 +34,6 @@ export function applyPromotions(nav: Element, presentNavKeys: readonly string[])
 export function markPromotedInMenu(promotedKeys: readonly string[]): void {
   for (const element of document.querySelectorAll<HTMLElement>(`#layers [data-xlt^="${buildKeyPrefix('more')}"]`)) {
     const isPromoted = promotedKeys.includes(element.dataset.xlt ?? '');
-    element.toggleAttribute('data-xlt-promoted', isPromoted);
+    element.toggleAttribute(PROMOTED_ATTRIBUTE, isPromoted);
   }
 }

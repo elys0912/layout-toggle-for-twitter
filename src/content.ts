@@ -15,6 +15,7 @@ import {
   HIDE_DECLARATION,
   NAV_SELECTOR,
   PRIMARY_COLUMN_SELECTOR,
+  PROMOTED_ATTRIBUTE,
   SIDEBAR_COLUMN_SELECTOR,
   applyStorageChanges,
   buildHiddenCss,
@@ -58,7 +59,7 @@ function updateCss(presentKeys: readonly string[]): void {
   const isWidened = shouldWiden({ layout: resolveLayout(getStored()), presentSideKeys, isHidden });
   const css = [
     buildHiddenCss([...keys].filter(isHidden)),
-    `[data-xlt-promoted]{${HIDE_DECLARATION}}`,
+    `[${PROMOTED_ATTRIBUTE}]{${HIDE_DECLARATION}}`,
     isWidened ? WIDEN_CSS : '',
   ].join('\n');
 

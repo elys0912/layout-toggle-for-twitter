@@ -324,6 +324,9 @@ export function shouldWiden(input: {
 // 隠すときの宣言。X の CSS より優先させるため !important を付ける
 export const HIDE_DECLARATION = 'display:none!important';
 
+// 左メニューへ移した項目の、「もっと見る」の中の元の項目に付ける印。content script の CSS でこの印の付いた項目を隠す
+export const PROMOTED_ATTRIBUTE = 'data-xlt-promoted';
+
 /**
  * 隠す項目の CSS。key は見出しの文字を含みうるので、CSS の文字列としてエスケープする。
  * 例：['nav.grok'] → '[data-xlt="nav.grok"]{display:none!important}'
