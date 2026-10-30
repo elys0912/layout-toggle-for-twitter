@@ -12,13 +12,16 @@
 import {
   BUILTIN_ITEMS,
   HEADER_SELECTOR,
-  HIDE_DECLARATION,
   NAV_SELECTOR,
   PRIMARY_COLUMN_SELECTOR,
   SIDEBAR_COLUMN_SELECTOR,
+  isKeyInSection,
+} from './page-rules.ts';
+import {
+  HIDE_DECLARATION,
+  PROMOTED_ATTRIBUTE,
   applyStorageChanges,
   buildHiddenCss,
-  isKeyInSection,
   resolveLayout,
   shouldWiden,
   toStoredState,
@@ -58,7 +61,7 @@ function updateCss(presentKeys: readonly string[]): void {
   const isWidened = shouldWiden({ layout: resolveLayout(getStored()), presentSideKeys, isHidden });
   const css = [
     buildHiddenCss([...keys].filter(isHidden)),
-    `[data-xlt-promoted]{${HIDE_DECLARATION}}`,
+    `[${PROMOTED_ATTRIBUTE}]{${HIDE_DECLARATION}}`,
     isWidened ? WIDEN_CSS : '',
   ].join('\n');
 

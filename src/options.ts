@@ -2,19 +2,18 @@
 // status.ranAt（x.com で動いた時刻）を読んで画面を作る。
 // 保存は切り替えた時点で行う。開いている x.com のタブは storage.onChanged で反映する。
 
+import { MORE_ITEMS, NAV_ITEMS, SIDE_BLOCKS_IN_DISPLAY_ORDER, isKeyInSection } from './page-rules.ts';
+import type { LinkRule, SectionPrefix, SideBlockRule } from './page-rules.ts';
 import {
-  MORE_ITEMS,
-  NAV_ITEMS,
-  SIDE_BLOCKS_IN_DISPLAY_ORDER,
   applyStorageChanges,
   buildMessageName,
+  clearNewMarks,
   isBuiltinKey,
-  isKeyInSection,
   resolveHidden,
   resolveLayout,
   toStoredState,
 } from './registry.ts';
-import type { Layout, LinkRule, SectionPrefix, SideBlockRule, StoredState } from './registry.ts';
+import type { Layout, StoredState } from './registry.ts';
 import { updateStoredState } from './storage.ts';
 
 interface SectionDefinition {
@@ -30,9 +29,18 @@ const SECTIONS: readonly SectionDefinition[] = [
   { prefix: 'side', titleMessage: 'sectionSide', builtinItems: SIDE_BLOCKS_IN_DISPLAY_ORDER },
 ];
 
+/** 設定画面が書く設定。保存の待ち行列に入れる単位 */
+type SettingsChanges = Pick<StoredState, 'hidden' | 'layout'>;
+
 let stored: StoredState = {};
 // 画面を開いた時点で「新規」だった項目。保存の印は開いた直後に外すが、この画面を閉じるまでは印を出し続ける
 let newKeysOnOpen = new Set<string>();
+// 最後に欄を作ったときの、欄の並びと見た目（buildSectionsSnapshot）。変わらなければ欄を作り直さない
+let renderedSectionsSnapshot = '';
+// 最後に並べた設定の書き込みが終わる時点。書き込みはこの後ろに 1 つずつ並べる
+let lastQueuedSettingsWrite: Promise<void> = Promise.resolve();
+// 待ち行列に入れ、まだ保存が終わっていない変更（並べた順）。画面には保存値にこれを重ねた値を出す
+let queuedSettingsChanges: SettingsChanges[] = [];
 
 function reportError(error: unknown): void {
   console.error('Layout Toggle for Twitter:', error);
@@ -58,8 +66,19 @@ function applyStaticMessages(): void {
   document.documentElement.lang = browser.i18n.getUILanguage();
 }
 
+/** 画面に出す、隠すかどうか。保存を待っている変更があれば、保存値より後に並べた変更を出す */
 function isHidden(key: string): boolean {
-  return resolveHidden(stored, key);
+  const queued = queuedSettingsChanges.findLast((changes) => changes.hidden?.[key] !== undefined);
+
+  return queued?.hidden?.[key] ?? resolveHidden(stored, key);
+}
+
+/** 画面に出す並べ方。保存値に、保存を待っている変更を並べた順に重ねる */
+function resolveDisplayedLayout(): Layout {
+  return queuedSettingsChanges.reduce<Layout>(
+    (layout, changes) => ({ ...layout, ...changes.layout }),
+    resolveLayout(stored),
+  );
 }
 
 /** 欄に並べる key。組み込みの項目の後に、x.com で見つけた表に無い項目を並べる */
@@ -78,14 +97,73 @@ function readItemLabel(key: string): string {
   return stored.seen?.[key]?.label || key;
 }
 
-async function saveHidden(changes: Record<string, boolean>): Promise<void> {
-  stored.hidden = { ...stored.hidden, ...changes };
-  await browser.storage.local.set({ hidden: stored.hidden });
+function hasNewBadge(key: string): boolean {
+  return newKeysOnOpen.has(key) || Boolean(stored.seen?.[key]?.new);
 }
 
-async function saveLayout(changes: Partial<Layout>): Promise<void> {
-  stored.layout = { ...stored.layout, ...changes };
-  await browser.storage.local.set({ layout: stored.layout });
+function hasSeenMoreMenu(): boolean {
+  return Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
+}
+
+/**
+ * 設定の書き込みを 1 つずつ順に行う。続けて操作したとき、後の書き込みが前の変更を含まない値で上書きしないため。
+ * write は前の書き込みが終わってから呼ぶ
+ */
+function enqueueSettingsWrite(write: () => Promise<void>): Promise<void> {
+  const queuedWrite = lastQueuedSettingsWrite.then(write);
+  // write が例外を投げても、次の書き込みは行う
+  lastQueuedSettingsWrite = queuedWrite.catch(() => undefined);
+
+  return queuedWrite;
+}
+
+/** 保存値に changes を重ねた、書き込む値。前の書き込みが終わってから作る */
+function buildSettingsToWrite(changes: SettingsChanges): SettingsChanges {
+  const toWrite: SettingsChanges = {};
+  if (changes.hidden) toWrite.hidden = { ...stored.hidden, ...changes.hidden };
+  if (changes.layout) toWrite.layout = { ...stored.layout, ...changes.layout };
+
+  return toWrite;
+}
+
+/**
+ * 保存が成功してから手元の値を変える。成功しても失敗しても待ち行列から外して描き直す。
+ * 失敗したときは、切り替えたスイッチが保存値のとおりに戻る
+ */
+async function writeSettings(changes: SettingsChanges): Promise<void> {
+  const toWrite = buildSettingsToWrite(changes);
+  try {
+    await browser.storage.local.set(toWrite);
+    stored = { ...stored, ...toWrite };
+  } catch (error) {
+    reportError(error);
+  } finally {
+    queuedSettingsChanges = queuedSettingsChanges.filter((queued) => queued !== changes);
+  }
+
+  render();
+}
+
+function saveSettings(changes: SettingsChanges): Promise<void> {
+  queuedSettingsChanges.push(changes);
+
+  return enqueueSettingsWrite(() => writeSettings(changes));
+}
+
+function saveHidden(changes: Record<string, boolean>): Promise<void> {
+  return saveSettings({ hidden: changes });
+}
+
+function saveLayout(changes: Partial<Layout>): Promise<void> {
+  return saveSettings({ layout: changes });
+}
+
+/** 表示の設定（hidden・layout）だけを初期設定に戻す。見つけた項目（seen）と動いた記録（status）は残す */
+function resetSettings(): Promise<void> {
+  return enqueueSettingsWrite(async () => {
+    await browser.storage.local.remove(['hidden', 'layout']);
+    stored = { ...stored, hidden: undefined, layout: undefined };
+  });
 }
 
 // --- 描画 ---
@@ -106,12 +184,13 @@ function buildRow(key: string): HTMLElement {
   const label = document.createElement('label');
   label.htmlFor = id;
   label.textContent = readItemLabel(key);
-  if (newKeysOnOpen.has(key) || stored.seen?.[key]?.new) label.append(buildBadge('badgeNew'));
+  if (hasNewBadge(key)) label.append(buildBadge('badgeNew'));
 
   const toggle = document.createElement('input');
   toggle.type = 'checkbox';
   toggle.className = 'switch';
   toggle.id = id;
+  toggle.dataset.key = key;
   toggle.checked = !isHidden(key);
   toggle.addEventListener('change', () => {
     saveHidden({ [key]: !toggle.checked }).catch(reportError);
@@ -157,8 +236,7 @@ function buildSectionHead(section: SectionDefinition, keys: readonly string[]): 
 
 /** 「もっと見る」を x.com で一度も開いていないときの案内。開いていれば null */
 function buildMoreNotSeenNote(): HTMLElement | null {
-  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
-  if (hasSeenMoreMenu) return null;
+  if (hasSeenMoreMenu()) return null;
 
   const note = document.createElement('p');
   note.className = 'note';
@@ -182,7 +260,7 @@ function buildSection(section: SectionDefinition): HTMLElement {
 }
 
 function renderLayout(): void {
-  const layout = resolveLayout(stored);
+  const layout = resolveDisplayedLayout();
   requireElement('layout-promote', HTMLInputElement).checked = layout.promote;
   requireElement('layout-widen', HTMLInputElement).checked = layout.widen;
   requireElement('widen-note', HTMLParagraphElement).textContent = t(layout.widen ? 'noteWidenWaiting' : 'noteWidenOff');
@@ -193,15 +271,49 @@ function renderNotRunBanner(): void {
   requireElement('not-run-banner', HTMLDivElement).hidden = Boolean(stored.status?.ranAt);
 }
 
-/** storage の値に合わせて画面全体を描き直す。描き直しても、操作中のスイッチからフォーカスが外れないようにする */
-function render(): void {
-  const focusedId = document.activeElement?.id;
+/**
+ * 欄の作りを決める値（項目の並び・名前・「新規」の印・「もっと見る」の案内）を 1 つの文字列にする。
+ * seen の href・iconPaths・order は欄に出ないので含めない
+ */
+function buildSectionsSnapshot(): string {
+  const rows = SECTIONS.map((section) => (
+    listSectionKeys(section).map((key) => [key, readItemLabel(key), hasNewBadge(key)])
+  ));
 
+  return JSON.stringify({ rows, hasSeenMoreMenu: hasSeenMoreMenu() });
+}
+
+/** 項目のスイッチを、作り直さずに画面に出す値（保存値と保存を待っている変更）に合わせる */
+function syncItemToggles(): void {
+  for (const toggle of document.querySelectorAll<HTMLInputElement>('#sections input[data-key]')) {
+    toggle.checked = !isHidden(toggle.dataset.key ?? '');
+  }
+}
+
+/**
+ * 欄を保存値に合わせる。x.com を開いている間は content script が seen・status を書くたびに呼ばれるので、
+ * 欄の作りが変わらなければスイッチだけ合わせ、スクロール位置とフォーカスを動かさない。
+ * 作り直すときも、操作中のスイッチからフォーカスが外れないようにする
+ */
+function renderSections(): void {
+  const snapshot = buildSectionsSnapshot();
+  if (snapshot === renderedSectionsSnapshot) {
+    syncItemToggles();
+    return;
+  }
+
+  const focusedId = document.activeElement?.id;
   requireElement('sections', HTMLDivElement).replaceChildren(...SECTIONS.map(buildSection));
-  renderLayout();
-  renderNotRunBanner();
+  renderedSectionsSnapshot = snapshot;
 
   if (focusedId) document.getElementById(focusedId)?.focus();
+}
+
+/** storage の値に合わせて画面を描き直す */
+function render(): void {
+  renderSections();
+  renderLayout();
+  renderNotRunBanner();
 }
 
 /**
@@ -211,12 +323,7 @@ function render(): void {
 async function clearNewBadges(): Promise<void> {
   if (newKeysOnOpen.size === 0) return;
 
-  await updateStoredState(['seen'], ({ seen = {} }) => {
-    const cleared = { ...seen };
-    for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
-
-    return { seen: cleared };
-  });
+  await updateStoredState(['seen'], ({ seen = {} }) => ({ seen: clearNewMarks(seen, newKeysOnOpen) }));
 }
 
 // --- 起動 ---
@@ -231,9 +338,8 @@ function bindStaticControls(): void {
   widen.addEventListener('change', () => {
     saveLayout({ widen: widen.checked }).catch(reportError);
   });
-  // 初期設定に戻すのは表示の設定（hidden・layout）だけ。見つけた項目（seen）と動いた記録（status）は残す
   requireElement('reset', HTMLButtonElement).addEventListener('click', () => {
-    browser.storage.local.remove(['hidden', 'layout']).catch(reportError);
+    resetSettings().catch(reportError);
   });
 }
 

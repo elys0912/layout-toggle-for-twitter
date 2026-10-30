@@ -8,5 +8,6 @@
     "erasableSyntaxOnly": true,
     "types": ["node"]
   },
-  "include": ["test", "src/registry.ts"]
+  // test から読む src は import をたどれば検査に入る。lib に DOM が無い環境で読めることを確かめるため、あえて列挙する
+  "include": ["test", "src/page-rules.ts", "src/registry.ts"]
 }
