@@ -8,5 +8,5 @@
     "erasableSyntaxOnly": true,
     "types": ["node"]
   },
-  "include": ["test", "src/registry.ts"]
+  "include": ["test", "src/page-rules.ts", "src/registry.ts"]
 }

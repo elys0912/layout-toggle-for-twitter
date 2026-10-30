@@ -12,14 +12,16 @@
 import {
   BUILTIN_ITEMS,
   HEADER_SELECTOR,
-  HIDE_DECLARATION,
   NAV_SELECTOR,
   PRIMARY_COLUMN_SELECTOR,
-  PROMOTED_ATTRIBUTE,
   SIDEBAR_COLUMN_SELECTOR,
+  isKeyInSection,
+} from './page-rules.ts';
+import {
+  HIDE_DECLARATION,
+  PROMOTED_ATTRIBUTE,
   applyStorageChanges,
   buildHiddenCss,
-  isKeyInSection,
   resolveLayout,
   shouldWiden,
   toStoredState,

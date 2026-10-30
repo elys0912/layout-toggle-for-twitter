@@ -2,20 +2,18 @@
 // status.ranAt（x.com で動いた時刻）を読んで画面を作る。
 // 保存は切り替えた時点で行う。開いている x.com のタブは storage.onChanged で反映する。
 
+import { MORE_ITEMS, NAV_ITEMS, SIDE_BLOCKS_IN_DISPLAY_ORDER, isKeyInSection } from './page-rules.ts';
+import type { LinkRule, SectionPrefix, SideBlockRule } from './page-rules.ts';
 import {
-  MORE_ITEMS,
-  NAV_ITEMS,
-  SIDE_BLOCKS_IN_DISPLAY_ORDER,
   applyStorageChanges,
   buildMessageName,
   clearNewMarks,
   isBuiltinKey,
-  isKeyInSection,
   resolveHidden,
   resolveLayout,
   toStoredState,
 } from './registry.ts';
-import type { Layout, LinkRule, SectionPrefix, SideBlockRule, StoredState } from './registry.ts';
+import type { Layout, StoredState } from './registry.ts';
 import { updateStoredState } from './storage.ts';
 
 interface SectionDefinition {

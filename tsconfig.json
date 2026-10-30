@@ -13,7 +13,7 @@
     // esbuild はファイルを 1 つずつ変換する
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    // node のテストが src/registry.ts をそのまま読むので、import に .ts を書く
+    // node のテストが src/page-rules.ts・src/registry.ts をそのまま読むので、import に .ts を書く
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "skipLibCheck": true,

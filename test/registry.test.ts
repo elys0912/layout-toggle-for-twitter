@@ -11,24 +11,27 @@ import {
   SIDE_BLOCKS,
   SIDE_DISPLAY_ORDER,
   SPACER_KEY,
-  applyStorageChanges,
-  buildHiddenCss,
   BUILTIN_ITEMS,
   buildHeadingKey,
-  buildMessageName,
   buildUnknownLinkKey,
   classifySideBlock,
-  clearNewMarks,
-  computePromotions,
   identifyLink,
   mergeHeadingBlocks,
-  mergePendingRecords,
   readHeadingTitle,
+} from '../src/page-rules.ts';
+import type { QueryableBlock } from '../src/page-rules.ts';
+import {
+  applyStorageChanges,
+  buildHiddenCss,
+  buildMessageName,
+  clearNewMarks,
+  computePromotions,
+  mergePendingRecords,
   resolveHidden,
   resolveLayout,
   shouldWiden,
 } from '../src/registry.ts';
-import type { MoreItem, QueryableBlock } from '../src/registry.ts';
+import type { MoreItem } from '../src/registry.ts';
 
 // classifySideBlock が使う分だけを持つ、右サイドバーのブロックの代わり。
 // parts はブロックの中にある要素の selector。selector の「, 」区切りのどれかが parts にあれば見つかったとみなす

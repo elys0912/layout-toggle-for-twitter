@@ -1,6 +1,7 @@
 // 「もっと見る」から左メニューへ移す項目を決め、複製を置き、メニューの中の元の項目に印を付ける。
 
-import { PROMOTED_ATTRIBUTE, buildKeyPrefix, computePromotions, isKeyInSection, resolveLayout } from '../registry.ts';
+import { buildKeyPrefix, isKeyInSection } from '../page-rules.ts';
+import { PROMOTED_ATTRIBUTE, computePromotions, resolveLayout } from '../registry.ts';
 import type { MoreItem } from '../registry.ts';
 import { CLONE_ATTRIBUTE, syncClones } from './clone.ts';
 import { readSeen } from './seen-store.ts';

@@ -1,7 +1,7 @@
 // 「もっと見る」から左メニューへ移す項目を、左メニューの既存の項目を複製して作る。
 // 複製には data-xlt-clone を付け、印付けと移す数の計算から外す。
 
-import { CLONE_TEMPLATE_SELECTOR, MORE_BUTTON_SELECTOR } from '../registry.ts';
+import { CLONE_TEMPLATE_SELECTOR, MORE_BUTTON_SELECTOR } from '../page-rules.ts';
 import type { MoreItem } from '../registry.ts';
 
 // 複製に付ける印。値は移す項目の key

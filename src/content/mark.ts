@@ -10,11 +10,11 @@ import {
   buildUnknownLinkKey,
   classifySideBlock,
   identifyLink,
-  isBuiltinKey,
   mergeHeadingBlocks,
   readHeadingTitle,
-} from '../registry.ts';
-import type { LinkAttributes, LinkRule, SectionPrefix } from '../registry.ts';
+} from '../page-rules.ts';
+import type { LinkAttributes, LinkRule, SectionPrefix } from '../page-rules.ts';
+import { isBuiltinKey } from '../registry.ts';
 import { CLONE_ATTRIBUTE } from './clone.ts';
 import { recordSeen } from './seen-store.ts';
 
