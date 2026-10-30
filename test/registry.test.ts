@@ -9,13 +9,21 @@ import {
   MORE_ITEMS,
   NAV_ITEMS,
   SIDE_BLOCKS,
+  SIDE_DISPLAY_ORDER,
   SPACER_KEY,
+  applyStorageChanges,
   buildHiddenCss,
+  BUILTIN_ITEMS,
+  buildHeadingKey,
   buildMessageName,
+  buildUnknownLinkKey,
   classifySideBlock,
   computePromotions,
   identifyLink,
+  mergeHeadingBlocks,
+  readHeadingTitle,
   resolveHidden,
+  resolveLayout,
   shouldWiden,
 } from '../src/registry.ts';
 import type { MoreItem, QueryableBlock } from '../src/registry.ts';
@@ -45,24 +53,53 @@ function readMessages(locale: string): Record<string, unknown> {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 
+describe('左メニューの項目の見分け方', () => {
+  it('testid のある項目は testid で、testid の無い項目は href で見分ける', () => {
+    assert.equal(identifyLink({ testid: 'AppTabBar_Home_Link', href: '/home' }, NAV_ITEMS), 'nav.home');
+    assert.equal(identifyLink({ testid: null, href: '/i/grok' }, NAV_ITEMS), 'nav.grok');
+  });
+
+  it('X が表に無い項目を足したら、href から key を作って別の項目として扱う', () => {
+    assert.equal(identifyLink({ testid: null, href: '/i/bookmarks' }, NAV_ITEMS), null);
+    assert.equal(buildUnknownLinkKey('nav', '/i/bookmarks'), 'nav.href:/i/bookmarks');
+  });
+});
+
 describe('「もっと見る」の項目の見分け方', () => {
   it('リストは誰のアカウントでも見分け、リストの中のページは別物として扱う', () => {
     assert.equal(identifyLink({ testid: null, href: '/someone_123/lists' }, MORE_ITEMS), 'more.lists');
     assert.equal(identifyLink({ testid: null, href: '/someone/lists/123' }, MORE_ITEMS), null);
   });
+
+  it('広告は x.com の外へのリンク先で見分ける', () => {
+    assert.equal(identifyLink({ testid: null, href: 'https://ads.x.com/?ref=menu' }, MORE_ITEMS), 'more.ads');
+  });
 });
 
 describe('右サイドバーのブロックの見分け方', () => {
-  it('2026-10-29 に見た 8 種類のブロックを、それぞれの手がかりで見分ける', () => {
+  it('2026-10-29〜30 に見た 9 種類のブロックを、それぞれの手がかりで見分ける', () => {
     const cases = [
       ['[data-testid="SearchBox_Search_Input"]', 'side.search'],
       ['a[href="/i/premium_sign_up"]', 'side.premium'],
+      ['[data-testid="searchFiltersAdvancedSearch"]', 'side.filters'],
       ['[data-testid="UserCell"]', 'side.follow'],
       ['nav a[href*="/tos"]', 'side.footer'],
       ['[data-testid="news_sidebar"]', 'side.news'],
       ['[data-testid$="_scores_sidebar"]', 'side.scores'],
       ['[data-testid="trend"]', 'side.trends'],
       ['[data-testid="pill-contents-container"]', 'side.live'],
+    ] as const;
+
+    const actual = cases.map(([part]) => classifySideBlock(fakeBlock({ parts: [part] })));
+
+    assert.deepEqual(actual, cases.map(([, key]) => key));
+  });
+
+  it('手がかりが 2 つあるブロックは、2 つ目の手がかりだけでも見分ける', () => {
+    const cases = [
+      ['[data-testid="radioGroupPeople"]', 'side.filters'],
+      ['a[href^="/i/connect_people"]', 'side.follow'],
+      ['a[href^="/explore/tabs/"]', 'side.trends'],
     ] as const;
 
     const actual = cases.map(([part]) => classifySideBlock(fakeBlock({ parts: [part] })));
@@ -78,6 +115,17 @@ describe('右サイドバーのブロックの見分け方', () => {
 
   it('X が新しいブロックを足したら、見出しの文字で別の項目として扱う', () => {
     assert.equal(classifySideBlock(fakeBlock({ heading: '  新しいブロック ' })), 'side.h:新しいブロック');
+  });
+
+  it('設定画面には、見出しの key から取り出した見出しの文字を名前として出す', () => {
+    assert.equal(readHeadingTitle(buildHeadingKey('新しいブロック')), '新しいブロック');
+    assert.equal(readHeadingTitle('side.news'), null);
+  });
+
+  it('検索のページで検索フィルターを隠すと見出しも一緒に隠れ、ほかのブロックの上の見出しは巻き込まない', () => {
+    const merged = mergeHeadingBlocks(['side.h:検索フィルター', 'side.filters', 'side.h:別の見出し', 'side.news']);
+
+    assert.deepEqual(merged, ['side.filters', 'side.filters', 'side.h:別の見出し', 'side.news']);
   });
 
   it('検索ボックスの下の中身の無い要素は、余白として扱う', () => {
@@ -102,6 +150,24 @@ describe('表示・非表示の設定', () => {
   it('検索ボックスを隠すと、その下の余白も一緒に隠れる', () => {
     assert.equal(resolveHidden({}, SPACER_KEY), false);
     assert.equal(resolveHidden({ hidden: { 'side.search': true } }, SPACER_KEY), true);
+  });
+
+  it('リセットすると隠す設定と並べ方が初期設定に戻り、見つけた項目の記録は残る', () => {
+    const stored = {
+      hidden: { 'nav.grok': false, 'nav.home': true },
+      layout: { widen: true, promote: false },
+      seen: { 'nav.href:/i/bookmarks': { label: 'ブックマーク' } },
+    };
+
+    // 設定画面のリセットは hidden と layout を消す。storage.onChanged には newValue の無い変更として届く
+    const reset = applyStorageChanges(stored, { hidden: {}, layout: {} });
+
+    assert.deepEqual(
+      ['nav.grok', 'nav.home'].map((key) => resolveHidden(reset, key)),
+      [true, false],
+    );
+    assert.deepEqual(resolveLayout(reset), { widen: false, promote: true });
+    assert.deepEqual(reset.seen, stored.seen);
   });
 });
 
@@ -175,7 +241,7 @@ describe('「もっと見る」から左メニューへ移す', () => {
       isHidden: hiddenOf('nav.home', 'nav.explore', 'nav.grok', 'nav.premium'),
     });
 
-    assert.equal(promotions.length, 3);
+    assert.deepEqual(promotions.map((item) => item.key), ['more.lists', 'more.communities', 'more.notes']);
   });
 });
 
@@ -212,9 +278,17 @@ describe('タイムラインを広げる', () => {
 describe('隠すための CSS', () => {
   it('見出しに引用符や改行が入っていても、CSS が壊れない', () => {
     assert.equal(
-      buildHiddenCss(['side.h:a"b\\c\nd']),
-      '[data-xlt="side.h:a\\"b\\\\c\\a d"]{display:none!important}',
+      buildHiddenCss(['side.h:a"b\\c\nd\r\ne\ff']),
+      '[data-xlt="side.h:a\\"b\\\\c\\a d\\d \\a e\\c f"]{display:none!important}',
     );
+  });
+});
+
+describe('設定画面の右サイドバーの欄', () => {
+  it('見分けられるブロックは、どれも画面の並びの中に 1 回ずつ出る', () => {
+    const blockKeys = SIDE_BLOCKS.map((block) => block.key).sort();
+
+    assert.deepEqual([...SIDE_DISPLAY_ORDER].sort(), blockKeys);
   });
 });
 
@@ -222,7 +296,7 @@ describe('設定画面の項目名', () => {
   it('組み込みの項目は、日本語と英語のどちらの画面でも名前が出る', () => {
     const ja = readMessages('ja');
     const en = readMessages('en');
-    const names = [...NAV_ITEMS, ...MORE_ITEMS, ...SIDE_BLOCKS].map((item) => buildMessageName(item.key));
+    const names = BUILTIN_ITEMS.map((item) => buildMessageName(item.key));
 
     assert.deepEqual(names.filter((name) => !ja[name] || !en[name]), []);
   });

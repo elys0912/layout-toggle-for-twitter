@@ -14,10 +14,12 @@ declare namespace browser {
       remove(keys: string | string[]): Promise<void>;
     }
 
+    type AreaName = 'local' | 'sync' | 'managed' | 'session';
+
     const local: StorageArea;
 
     const onChanged: {
-      addListener(callback: (changes: Record<string, StorageChange>, areaName: string) => void): void;
+      addListener(callback: (changes: Record<string, StorageChange>, areaName: AreaName) => void): void;
     };
   }
 

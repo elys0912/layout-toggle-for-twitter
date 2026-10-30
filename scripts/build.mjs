@@ -10,7 +10,7 @@
 //
 // 使い方: node scripts/build.mjs
 
-import { cpSync, rmSync } from 'node:fs';
+import { cpSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,6 +28,11 @@ const COPIED_PATHS = [
   ['src/options.css', 'options.css'],
 ];
 
+// esbuild の出力先の版は、manifest の strict_min_version（例：'140.0' → 'firefox140'）から作る。
+// 2 か所に書くと、片方だけ上げたときに食い違うため
+const manifest = JSON.parse(readFileSync(path.join(root, 'src', 'manifest.json'), 'utf8'));
+const minFirefoxMajor = manifest.browser_specific_settings.gecko.strict_min_version.split('.')[0];
+
 rmSync(dist, { recursive: true, force: true });
 
 await build({
@@ -38,8 +43,7 @@ await build({
   outdir: dist,
   bundle: true,
   format: 'iife',
-  // manifest の strict_min_version（Firefox 140）に合わせる
-  target: 'firefox140',
+  target: `firefox${minFirefoxMajor}`,
   minify: false,
   legalComments: 'none',
   logLevel: 'warning',
