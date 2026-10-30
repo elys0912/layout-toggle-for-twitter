@@ -199,11 +199,15 @@ function render(): void {
   if (focusedId) document.getElementById(focusedId)?.focus();
 }
 
-/** 「新規」の印は一度見せたら、保存の側から外す */
+/**
+ * 「新規」の印は一度見せたら、保存の側から外す。
+ * 画面を開いてからも content script が seen に項目を足しうるので、書く直前に読み直して重ねる
+ */
 async function clearNewBadges(): Promise<void> {
   if (newKeysOnOpen.size === 0) return;
 
-  const seen = stored.seen ?? {};
+  // 書くのはこの拡張だけなので、読んだ値は StoredState の形をしている
+  const { seen = {} } = (await browser.storage.local.get('seen')) as StoredState;
   const cleared = { ...seen };
   for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
   await browser.storage.local.set({ seen: cleared });
