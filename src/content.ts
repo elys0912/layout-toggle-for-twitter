@@ -3,20 +3,24 @@
 // 「もっと見る」から移す項目は、左メニューの既存の項目を複製して作る。
 
 import {
+  BUILTIN_ITEMS,
   MORE_ITEMS,
   NAV_ITEMS,
-  SIDE_BLOCKS,
   applyStorageChanges,
   buildHiddenCss,
+  buildKeyPrefix,
   buildUnknownLinkKey,
   classifySideBlock,
   computePromotions,
   identifyLink,
   isBuiltinKey,
+  isKeyInSection,
   mergeHeadingBlocks,
+  readHeadingTitle,
   resolveHidden,
   resolveLayout,
   shouldWiden,
+  toStoredState,
 } from './registry.ts';
 import type { MoreItem, SeenEntry, StoredState } from './registry.ts';
 
@@ -84,8 +88,7 @@ async function savePending(): Promise<void> {
   const statusToSave = pendingStatus;
 
   try {
-    // 書くのはこの拡張だけなので、読んだ値は StoredState の形をしている
-    const { seen = {}, status = {} } = (await browser.storage.local.get(['seen', 'status'])) as StoredState;
+    const { seen = {}, status = {} } = toStoredState(await browser.storage.local.get(['seen', 'status']));
     await browser.storage.local.set({
       seen: { ...seen, ...seenToSave },
       status: { ...status, ...statusToSave },
@@ -199,7 +202,8 @@ function markSidebar(): string[] {
 
     setMark(block, key);
     keys.push(key);
-    if (key.startsWith('side.h:')) recordSeen(key, { label: key.slice('side.h:'.length) });
+    const title = readHeadingTitle(key);
+    if (title !== null) recordSeen(key, { label: title });
   });
 
   return keys;
@@ -209,7 +213,7 @@ function markSidebar(): string[] {
 
 function listMoreItems(): MoreItem[] {
   return Object.entries(readSeen()).flatMap(([key, entry]) => {
-    if (!key.startsWith('more.') || !entry.href) return [];
+    if (!isKeyInSection(key, 'more') || !entry.href) return [];
 
     return [{ key, href: entry.href, order: entry.order ?? 0, label: entry.label, iconPaths: entry.iconPaths }];
   });
@@ -319,7 +323,7 @@ function applyPromotions(nav: Element, presentNavKeys: readonly string[]): strin
 
 /** 移した項目の、メニューの中の元の項目に印を付ける */
 function markPromotedInMenu(promotedKeys: readonly string[]): void {
-  for (const element of document.querySelectorAll<HTMLElement>('#layers [data-xlt^="more."]')) {
+  for (const element of document.querySelectorAll<HTMLElement>(`#layers [data-xlt^="${buildKeyPrefix('more')}"]`)) {
     const isPromoted = promotedKeys.includes(element.dataset.xlt ?? '');
     element.toggleAttribute('data-xlt-promoted', isPromoted);
   }
@@ -329,11 +333,11 @@ function markPromotedInMenu(promotedKeys: readonly string[]): void {
 
 function updateCss(presentKeys: readonly string[]): void {
   const keys = new Set([
-    ...[...NAV_ITEMS, ...MORE_ITEMS, ...SIDE_BLOCKS].map((item) => item.key),
+    ...BUILTIN_ITEMS.map((item) => item.key),
     ...Object.keys(readSeen()),
     ...presentKeys,
   ]);
-  const presentSideKeys = presentKeys.filter((key) => key.startsWith('side.'));
+  const presentSideKeys = presentKeys.filter((key) => isKeyInSection(key, 'side'));
   const widen = shouldWiden({ layout: resolveLayout(stored), presentSideKeys, isHidden });
   const css = [
     buildHiddenCss([...keys].filter(isHidden)),
@@ -379,7 +383,7 @@ browser.storage.onChanged.addListener((changes, area) => {
 });
 
 browser.storage.local.get(null).then((items) => {
-  stored = items as StoredState;
+  stored = toStoredState(items);
   isLoaded = true;
   // permissions.contains は、x.com で動いているのに false を返した（2026-10-29）。
   // そのため、x.com で実際に動いた時刻を設定画面に渡す

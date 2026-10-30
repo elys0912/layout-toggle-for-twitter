@@ -8,16 +8,18 @@ import { describe, it } from 'node:test';
 import {
   MORE_ITEMS,
   NAV_ITEMS,
-  SIDE_BLOCKS,
   SPACER_KEY,
   applyStorageChanges,
   buildHiddenCss,
+  BUILTIN_ITEMS,
+  buildHeadingKey,
   buildMessageName,
   buildUnknownLinkKey,
   classifySideBlock,
   computePromotions,
   identifyLink,
   mergeHeadingBlocks,
+  readHeadingTitle,
   resolveHidden,
   resolveLayout,
   shouldWiden,
@@ -111,6 +113,11 @@ describe('右サイドバーのブロックの見分け方', () => {
 
   it('X が新しいブロックを足したら、見出しの文字で別の項目として扱う', () => {
     assert.equal(classifySideBlock(fakeBlock({ heading: '  新しいブロック ' })), 'side.h:新しいブロック');
+  });
+
+  it('設定画面には、見出しの key から取り出した見出しの文字を名前として出す', () => {
+    assert.equal(readHeadingTitle(buildHeadingKey('新しいブロック')), '新しいブロック');
+    assert.equal(readHeadingTitle('side.news'), null);
   });
 
   it('検索のページで検索フィルターを隠すと見出しも一緒に隠れ、ほかのブロックの上の見出しは巻き込まない', () => {
@@ -279,7 +286,7 @@ describe('設定画面の項目名', () => {
   it('組み込みの項目は、日本語と英語のどちらの画面でも名前が出る', () => {
     const ja = readMessages('ja');
     const en = readMessages('en');
-    const names = [...NAV_ITEMS, ...MORE_ITEMS, ...SIDE_BLOCKS].map((item) => buildMessageName(item.key));
+    const names = BUILTIN_ITEMS.map((item) => buildMessageName(item.key));
 
     assert.deepEqual(names.filter((name) => !ja[name] || !en[name]), []);
   });

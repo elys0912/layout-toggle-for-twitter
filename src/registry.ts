@@ -14,6 +14,9 @@ export interface SideBlockRule {
   selector: string;
 }
 
+/** 項目の key の先頭。設定画面の欄の区切りと同じ */
+export type SectionPrefix = 'nav' | 'more' | 'side';
+
 export interface Layout {
   widen: boolean;
   promote: boolean;
@@ -93,8 +96,15 @@ export const SIDE_BLOCKS: readonly SideBlockRule[] = [
   { key: 'side.live', selector: '[data-testid="pill-contents-container"]' },
 ];
 
+export const BUILTIN_ITEMS: readonly (LinkRule | SideBlockRule)[] = [...NAV_ITEMS, ...MORE_ITEMS, ...SIDE_BLOCKS];
+
+const BUILTIN_KEYS: ReadonlySet<string> = new Set(BUILTIN_ITEMS.map((item) => item.key));
+
 // 検索ボックスの下にある、中身の無い余白。検索ボックスと一緒に隠す
 export const SPACER_KEY = 'side.spacer';
+
+// 右サイドバーの、表に無いブロックの key の先頭。後ろに見出しの文字が付く
+const HEADING_KEY_PREFIX = 'side.h:';
 
 // 初期状態で隠す項目。ホームと設定とプライバシーは、隠すと戻る手段が減るので含めない
 export const DEFAULT_HIDDEN: readonly string[] = [
@@ -129,9 +139,28 @@ export function identifyLink(
   return matched ? matched.key : null;
 }
 
+/** 欄の項目の key に共通する先頭。例：'more' → 'more.' */
+export function buildKeyPrefix(section: SectionPrefix): string {
+  return `${section}.`;
+}
+
+export function isKeyInSection(key: string, section: SectionPrefix): boolean {
+  return key.startsWith(buildKeyPrefix(section));
+}
+
 /** 見分け方の表に無いリンクの key。例：('nav', '/i/bookmarks') → 'nav.href:/i/bookmarks' */
-export function buildUnknownLinkKey(section: 'nav' | 'more', href: string): string {
-  return `${section}.href:${href}`;
+export function buildUnknownLinkKey(section: Exclude<SectionPrefix, 'side'>, href: string): string {
+  return `${buildKeyPrefix(section)}href:${href}`;
+}
+
+/** 表に無い右サイドバーのブロックの key。例：'新しいブロック' → 'side.h:新しいブロック' */
+export function buildHeadingKey(title: string): string {
+  return `${HEADING_KEY_PREFIX}${title}`;
+}
+
+/** buildHeadingKey で作った key から見出しの文字を取り出す。見出しの key でなければ null */
+export function readHeadingTitle(key: string): string | null {
+  return key.startsWith(HEADING_KEY_PREFIX) ? key.slice(HEADING_KEY_PREFIX.length) : null;
 }
 
 /**
@@ -146,7 +175,7 @@ export function classifySideBlock(block: QueryableBlock): string | null {
 
   const title = (block.querySelector('h2')?.textContent ?? '').trim();
 
-  return title ? `side.h:${title}` : null;
+  return title ? buildHeadingKey(title) : null;
 }
 
 // 見出しと中身が別のブロックに分かれている項目。直前の見出しだけのブロックを同じ項目として扱う
@@ -158,15 +187,16 @@ const KEYS_WITH_SEPARATE_HEADING: readonly string[] = ['side.filters'];
  */
 export function mergeHeadingBlocks(keys: readonly (string | null)[]): (string | null)[] {
   return keys.map((key, index) => {
-    const next = keys[index + 1];
-    const isHeadingOfNext = key?.startsWith('side.h:') && next !== undefined && next !== null && KEYS_WITH_SEPARATE_HEADING.includes(next);
+    const next = keys[index + 1] ?? null;
+    const isHeading = key !== null && readHeadingTitle(key) !== null;
+    const hasSeparateHeading = next !== null && KEYS_WITH_SEPARATE_HEADING.includes(next);
 
-    return isHeadingOfNext ? next : key;
+    return isHeading && hasSeparateHeading ? next : key;
   });
 }
 
 export function isBuiltinKey(key: string): boolean {
-  return [...NAV_ITEMS, ...MORE_ITEMS, ...SIDE_BLOCKS].some((item) => item.key === key);
+  return BUILTIN_KEYS.has(key);
 }
 
 /** 項目を隠すかどうか。保存値に無い項目は初期値に従う */
@@ -254,8 +284,13 @@ export function applyStorageChanges(
     }
   }
 
+  return toStoredState(next);
+}
+
+/** storage.local から読んだ値を StoredState として扱う */
+export function toStoredState(items: Record<string, unknown>): StoredState {
   // 書くのはこの拡張だけなので、値は StoredState の各項目の形をしている
-  return next as StoredState;
+  return items as StoredState;
 }
 
 /** 組み込みの項目の翻訳名。例：'nav.home' → 'item_nav_home' */

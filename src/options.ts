@@ -9,13 +9,15 @@ import {
   applyStorageChanges,
   buildMessageName,
   isBuiltinKey,
+  isKeyInSection,
   resolveHidden,
   resolveLayout,
+  toStoredState,
 } from './registry.ts';
-import type { Layout, LinkRule, SideBlockRule, StoredState } from './registry.ts';
+import type { Layout, LinkRule, SectionPrefix, SideBlockRule, StoredState } from './registry.ts';
 
 interface SectionDefinition {
-  prefix: 'nav' | 'more' | 'side';
+  prefix: SectionPrefix;
   titleMessage: string;
   builtinItems: readonly (LinkRule | SideBlockRule)[];
 }
@@ -78,7 +80,7 @@ function isHidden(key: string): boolean {
 function listSectionKeys(section: SectionDefinition): string[] {
   const builtinKeys = section.builtinItems.map((item) => item.key);
   const discoveredKeys = Object.keys(stored.seen ?? {})
-    .filter((key) => key.startsWith(`${section.prefix}.`) && !builtinKeys.includes(key));
+    .filter((key) => isKeyInSection(key, section.prefix) && !builtinKeys.includes(key));
 
   return [...builtinKeys, ...discoveredKeys];
 }
@@ -163,7 +165,7 @@ function buildSection(section: SectionDefinition): HTMLElement {
   head.append(title, buttons);
   element.append(head);
 
-  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => key.startsWith('more.'));
+  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
   if (section.prefix === 'more' && !hasSeenMoreMenu) {
     const hint = document.createElement('p');
     hint.className = 'note';
@@ -206,8 +208,7 @@ function render(): void {
 async function clearNewBadges(): Promise<void> {
   if (newKeysOnOpen.size === 0) return;
 
-  // 書くのはこの拡張だけなので、読んだ値は StoredState の形をしている
-  const { seen = {} } = (await browser.storage.local.get('seen')) as StoredState;
+  const { seen = {} } = toStoredState(await browser.storage.local.get('seen'));
   const cleared = { ...seen };
   for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
   await browser.storage.local.set({ seen: cleared });
@@ -240,7 +241,7 @@ browser.storage.onChanged.addListener((changes, area) => {
 applyStaticMessages();
 bindStaticControls();
 browser.storage.local.get(null).then(async (items) => {
-  stored = items as StoredState;
+  stored = toStoredState(items);
   const seen = stored.seen ?? {};
   newKeysOnOpen = new Set(Object.keys(seen).filter((key) => seen[key]?.new));
   render();
