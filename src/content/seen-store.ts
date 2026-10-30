@@ -2,7 +2,7 @@
 // 保存を待っている記録も readSeen で読めるので、保存の前から移す項目の計算に使える。
 
 import { isBuiltinKey, mergePendingRecords } from '../registry.ts';
-import type { RunStatus, SeenEntry } from '../registry.ts';
+import type { PendingRecords, SeenEntry } from '../registry.ts';
 import { updateStoredState } from '../storage.ts';
 import { getStored } from './state.ts';
 
@@ -14,16 +14,16 @@ const SAVE_DELAY_MS = 1000;
 const SAVE_RETRY_DELAY_MS = 10_000;
 const MAX_SAVE_RETRIES = 3;
 
-let pendingSeen: Record<string, SeenEntry> = {};
-// status に書く値
-let pendingStatus: RunStatus = {};
+const pending: PendingRecords = { seen: {}, status: {} };
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+// savePending が storage の読み書きを待っている間は true。保存を 2 本並べて走らせないため
+let isSaving = false;
 // 続けて失敗した回数。保存に成功したら 0 に戻す
-let failedSaveCount = 0;
+let consecutiveSaveFailures = 0;
 
 /** 保存済みの記録に、保存を待っている記録を重ねたもの */
 export function readSeen(): Record<string, SeenEntry> {
-  return { ...getStored().seen, ...pendingSeen };
+  return { ...getStored().seen, ...pending.seen };
 }
 
 export function recordSeen(key: string, entry: SeenEntry): void {
@@ -33,7 +33,7 @@ export function recordSeen(key: string, entry: SeenEntry): void {
   const merged: SeenEntry = { ...known, ...entry, ...(isNew ? { new: true } : {}) };
   if (known && JSON.stringify(known) === JSON.stringify(merged)) return;
 
-  pendingSeen[key] = merged;
+  pending.seen[key] = merged;
   scheduleSave();
 }
 
@@ -43,7 +43,7 @@ export function recordSeen(key: string, entry: SeenEntry): void {
  * そのため、x.com で実際に動いた時刻を設定画面に渡す
  */
 export function recordRun(): void {
-  pendingStatus = { ...pendingStatus, ranAt: Date.now() };
+  pending.status = { ...pending.status, ranAt: Date.now() };
   scheduleSave();
 }
 
@@ -52,6 +52,12 @@ function scheduleSave(delayMs: number = SAVE_DELAY_MS): void {
 
   saveTimer = setTimeout(() => {
     saveTimer = null;
+    // 前の保存が終わっていなければ、同じ待ち時間の後に回す
+    if (isSaving) {
+      scheduleSave(delayMs);
+      return;
+    }
+
     void savePending();
   }, delayMs);
 }
@@ -62,25 +68,26 @@ function scheduleSave(delayMs: number = SAVE_DELAY_MS): void {
  * 保存を待つ間に増えた・変わった記録も手元に残す
  */
 async function savePending(): Promise<void> {
-  const seenToSave = { ...pendingSeen };
-  const statusToSave = pendingStatus;
+  const toSave: PendingRecords = { seen: { ...pending.seen }, status: pending.status };
 
+  isSaving = true;
   try {
-    await updateStoredState(['seen', 'status'], (latest) => (
-      mergePendingRecords(latest, { seen: seenToSave, status: statusToSave })
-    ));
+    await updateStoredState(['seen', 'status'], (latest) => mergePendingRecords(latest, toSave));
   } catch (error) {
     console.warn('Layout Toggle for Twitter: 見つけた項目を保存できなかった', error);
-    failedSaveCount += 1;
-    if (failedSaveCount <= MAX_SAVE_RETRIES) scheduleSave(SAVE_RETRY_DELAY_MS);
+    consecutiveSaveFailures += 1;
+    const canRetry = consecutiveSaveFailures <= MAX_SAVE_RETRIES;
+    if (canRetry) scheduleSave(SAVE_RETRY_DELAY_MS);
     return;
+  } finally {
+    isSaving = false;
   }
 
-  failedSaveCount = 0;
+  consecutiveSaveFailures = 0;
 
   // recordSeen・recordRun は記録を変えるたびに新しいオブジェクトを入れるので、同じオブジェクトなら保存済み
-  for (const [key, entry] of Object.entries(seenToSave)) {
-    if (pendingSeen[key] === entry) delete pendingSeen[key];
+  for (const [key, entry] of Object.entries(toSave.seen)) {
+    if (pending.seen[key] === entry) delete pending.seen[key];
   }
-  if (pendingStatus === statusToSave) pendingStatus = {};
+  if (pending.status === toSave.status) pending.status = {};
 }
