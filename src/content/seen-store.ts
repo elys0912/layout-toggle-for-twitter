@@ -1,7 +1,7 @@
 // x.com で見つけた項目（seen）と、x.com で動いた時刻（status）を、まとめて storage.local に保存する。
 // 保存を待っている記録も readSeen で読めるので、保存の前から移す項目の計算に使える。
 
-import { isBuiltinKey } from '../registry.ts';
+import { isBuiltinKey, mergePendingRecords } from '../registry.ts';
 import type { RunStatus, SeenEntry } from '../registry.ts';
 import { updateStoredState } from '../storage.ts';
 import { getStored } from './state.ts';
@@ -66,10 +66,9 @@ async function savePending(): Promise<void> {
   const statusToSave = pendingStatus;
 
   try {
-    await updateStoredState(['seen', 'status'], ({ seen = {}, status = {} }) => ({
-      seen: { ...seen, ...seenToSave },
-      status: { ...status, ...statusToSave },
-    }));
+    await updateStoredState(['seen', 'status'], (latest) => (
+      mergePendingRecords(latest, { seen: seenToSave, status: statusToSave })
+    ));
   } catch (error) {
     console.warn('Layout Toggle for Twitter: 見つけた項目を保存できなかった', error);
     failedSaveCount += 1;

@@ -18,9 +18,11 @@ import {
   buildMessageName,
   buildUnknownLinkKey,
   classifySideBlock,
+  clearNewMarks,
   computePromotions,
   identifyLink,
   mergeHeadingBlocks,
+  mergePendingRecords,
   readHeadingTitle,
   resolveHidden,
   resolveLayout,
@@ -272,6 +274,45 @@ describe('タイムラインを広げる', () => {
     const widen = shouldWiden({ layout, presentSideKeys: [SPACER_KEY], isHidden: () => true });
 
     assert.equal(widen, false);
+  });
+});
+
+describe('見つけた項目の保存', () => {
+  it('content script の記録を重ねると、同じ項目は手元の記録になり、手元に無い項目は保存値のまま残る', () => {
+    const latest = {
+      seen: {
+        'more.lists': { label: 'リスト', order: 0 },
+        'nav.href:/i/bookmarks': { label: 'ブックマーク', new: false },
+      },
+      status: { ranAt: 1 },
+    };
+    const pending = { seen: { 'more.lists': { label: 'リスト', order: 1 } }, status: { ranAt: 2 } };
+
+    assert.deepEqual(mergePendingRecords(latest, pending), {
+      seen: {
+        'more.lists': { label: 'リスト', order: 1 },
+        'nav.href:/i/bookmarks': { label: 'ブックマーク', new: false },
+      },
+      status: { ranAt: 2 },
+    });
+  });
+
+  it('初めて保存するとき（保存値が空）は、手元の記録がそのまま入る', () => {
+    const pending = { seen: { 'more.lists': { order: 0 } }, status: { ranAt: 1 } };
+
+    assert.deepEqual(mergePendingRecords({}, pending), pending);
+  });
+
+  it('設定画面を開いて新規の印を外しても、名前とほかの項目は保存値のまま残る', () => {
+    const seen = {
+      'nav.href:/i/bookmarks': { label: 'ブックマーク', new: true },
+      'side.h:新しいブロック': { new: true },
+    };
+
+    assert.deepEqual(clearNewMarks(seen, ['nav.href:/i/bookmarks']), {
+      'nav.href:/i/bookmarks': { label: 'ブックマーク', new: false },
+      'side.h:新しいブロック': { new: true },
+    });
   });
 });
 

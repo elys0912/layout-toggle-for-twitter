@@ -365,6 +365,34 @@ export function applyStorageChanges(
   return toStoredState(next);
 }
 
+/** content script が保存を待っている記録 */
+export interface PendingRecords {
+  seen: Record<string, SeenEntry>;
+  status: RunStatus;
+}
+
+/**
+ * 書く直前に読み直した保存値に、content script が保存を待っている記録を重ねる。
+ * 同じ key の項目は手元の記録で置き換え、手元に無い項目（設定画面が書いた分を含む）は保存値のまま残す
+ */
+export function mergePendingRecords(
+  latest: StoredState,
+  pending: PendingRecords,
+): Required<Pick<StoredState, 'seen' | 'status'>> {
+  return {
+    seen: { ...latest.seen, ...pending.seen },
+    status: { ...latest.status, ...pending.status },
+  };
+}
+
+/** 書く直前に読み直した seen の、keys の項目から「新規」の印だけを外した写しを返す */
+export function clearNewMarks(seen: Record<string, SeenEntry>, keys: Iterable<string>): Record<string, SeenEntry> {
+  const cleared = { ...seen };
+  for (const key of keys) cleared[key] = { ...seen[key], new: false };
+
+  return cleared;
+}
+
 /** storage.local から読んだ値を StoredState として扱う */
 export function toStoredState(items: Record<string, unknown>): StoredState {
   // 書くのはこの拡張だけなので、値は StoredState の各項目の形をしている

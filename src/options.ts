@@ -8,6 +8,7 @@ import {
   SIDE_BLOCKS_IN_DISPLAY_ORDER,
   applyStorageChanges,
   buildMessageName,
+  clearNewMarks,
   isBuiltinKey,
   isKeyInSection,
   resolveHidden,
@@ -225,12 +226,7 @@ function render(): void {
 async function clearNewBadges(): Promise<void> {
   if (newKeysOnOpen.size === 0) return;
 
-  await updateStoredState(['seen'], ({ seen = {} }) => {
-    const cleared = { ...seen };
-    for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
-
-    return { seen: cleared };
-  });
+  await updateStoredState(['seen'], ({ seen = {} }) => ({ seen: clearNewMarks(seen, newKeysOnOpen) }));
 }
 
 // --- 起動 ---
