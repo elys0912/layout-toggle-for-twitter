@@ -221,9 +221,10 @@ function pickTemplate(nav: Element): HTMLElement | null {
     ?? nav.querySelector<HTMLElement>(':scope > a[data-testid^="AppTabBar_"]');
 }
 
+/** アイコンを差し替える。アイコンの形を記録できていなければ、複製元のアイコンのまま残す */
 function replaceIcon(clone: Element, iconPaths: readonly string[]): void {
   const svg = clone.querySelector('svg');
-  if (!svg) return;
+  if (!svg || iconPaths.length === 0) return;
 
   const group = document.createElementNS(SVG_NS, 'g');
   for (const d of iconPaths) {
