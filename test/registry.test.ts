@@ -300,6 +300,15 @@ describe('見つけた項目の保存', () => {
     });
   });
 
+  it('設定画面が新規の印を外した項目は、手元の古い記録が印を持っていても印を戻さない', () => {
+    const latest = { seen: { 'nav.href:/i/bookmarks': { label: 'ブックマーク', new: false } } };
+    const pending = { seen: { 'nav.href:/i/bookmarks': { label: 'ブックマーク', new: true } }, status: {} };
+
+    assert.deepEqual(mergePendingRecords(latest, pending).seen, {
+      'nav.href:/i/bookmarks': { label: 'ブックマーク', new: false },
+    });
+  });
+
   it('初めて保存するとき（保存値が空）は、手元の記録がそのまま入る', () => {
     const pending = { seen: { 'more.lists': { order: 0 } }, status: { ranAt: 1 } };
 
@@ -316,6 +325,10 @@ describe('見つけた項目の保存', () => {
       'nav.href:/i/bookmarks': { label: 'ブックマーク', new: false },
       'side.h:新しいブロック': { new: true },
     });
+  });
+
+  it('新規の印を外す項目が保存値に無ければ、項目を作らない', () => {
+    assert.deepEqual(clearNewMarks({}, ['nav.href:/i/bookmarks']), {});
   });
 });
 

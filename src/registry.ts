@@ -166,22 +166,35 @@ export interface PendingRecords {
 
 /**
  * 書く直前に読み直した保存値に、content script が保存を待っている記録を重ねる。
- * 同じ key の項目は手元の記録で置き換え、手元に無い項目（設定画面が書いた分を含む）は保存値のまま残す
+ * 同じ key の項目は手元の記録で置き換え、手元に無い項目（設定画面が書いた分を含む）は保存値のまま残す。
+ * 設定画面が外した「新規」の印は、手元の記録が new: true を持っていても戻さない
  */
 export function mergePendingRecords(
   latest: StoredState,
   pending: PendingRecords,
 ): Required<Pick<StoredState, 'seen' | 'status'>> {
+  const latestSeen = latest.seen ?? {};
+  const pendingSeen = Object.fromEntries(Object.entries(pending.seen).map(([key, entry]) => {
+    const isNewMarkCleared = latestSeen[key]?.new === false;
+
+    return [key, isNewMarkCleared ? { ...entry, new: false } : entry];
+  }));
+
   return {
-    seen: { ...latest.seen, ...pending.seen },
+    seen: { ...latestSeen, ...pendingSeen },
     status: { ...latest.status, ...pending.status },
   };
 }
 
-/** 書く直前に読み直した seen の、keys の項目から「新規」の印だけを外した写しを返す */
+/** 書く直前に読み直した seen の、keys の項目から「新規」の印だけを外した写しを返す。seen に無い key は飛ばす */
 export function clearNewMarks(seen: Record<string, SeenEntry>, keys: Iterable<string>): Record<string, SeenEntry> {
   const cleared = { ...seen };
-  for (const key of keys) cleared[key] = { ...seen[key], new: false };
+  for (const key of keys) {
+    const entry = seen[key];
+    if (!entry) continue;
+
+    cleared[key] = { ...entry, new: false };
+  }
 
   return cleared;
 }
