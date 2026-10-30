@@ -5,49 +5,41 @@
 import {
   MORE_ITEMS,
   NAV_ITEMS,
-  SIDE_BLOCKS,
+  SIDE_BLOCKS_IN_DISPLAY_ORDER,
   applyStorageChanges,
   buildMessageName,
   isBuiltinKey,
+  isKeyInSection,
   resolveHidden,
   resolveLayout,
+  toStoredState,
 } from './registry.ts';
-import type { Layout, LinkRule, SideBlockRule, StoredState } from './registry.ts';
+import type { Layout, LinkRule, SectionPrefix, SideBlockRule, StoredState } from './registry.ts';
+import { updateStoredState } from './storage.ts';
 
 interface SectionDefinition {
-  prefix: 'nav' | 'more' | 'side';
+  prefix: SectionPrefix;
   titleMessage: string;
   builtinItems: readonly (LinkRule | SideBlockRule)[];
 }
 
-// 右サイドバーは x.com の画面の上から順に並べる。SIDE_BLOCKS は判定の優先順なので、画面の並びとは違う
-const SIDE_DISPLAY_ORDER: readonly string[] = [
-  'side.search',
-  'side.filters',
-  'side.premium',
-  'side.live',
-  'side.news',
-  'side.scores',
-  'side.trends',
-  'side.follow',
-  'side.footer',
-];
-
 const SECTIONS: readonly SectionDefinition[] = [
   { prefix: 'nav', titleMessage: 'sectionNav', builtinItems: NAV_ITEMS },
   { prefix: 'more', titleMessage: 'sectionMore', builtinItems: MORE_ITEMS },
-  {
-    prefix: 'side',
-    titleMessage: 'sectionSide',
-    builtinItems: [...SIDE_BLOCKS].sort((a, b) => SIDE_DISPLAY_ORDER.indexOf(a.key) - SIDE_DISPLAY_ORDER.indexOf(b.key)),
-  },
+  // 右サイドバーは x.com の画面の上から順に並べる
+  { prefix: 'side', titleMessage: 'sectionSide', builtinItems: SIDE_BLOCKS_IN_DISPLAY_ORDER },
 ];
 
 let stored: StoredState = {};
 // 画面を開いた時点で「新規」だった項目。保存の印は開いた直後に外すが、この画面を閉じるまでは印を出し続ける
 let newKeysOnOpen = new Set<string>();
 
+function reportError(error: unknown): void {
+  console.error('Layout Toggle for Twitter:', error);
+}
+
 function t(name: string): string {
+  // getMessage は定義の無い名前に空文字を返すので、?? でなく || で名前に戻す
   return browser.i18n.getMessage(name) || name;
 }
 
@@ -74,7 +66,7 @@ function isHidden(key: string): boolean {
 function listSectionKeys(section: SectionDefinition): string[] {
   const builtinKeys = section.builtinItems.map((item) => item.key);
   const discoveredKeys = Object.keys(stored.seen ?? {})
-    .filter((key) => key.startsWith(`${section.prefix}.`) && !builtinKeys.includes(key));
+    .filter((key) => isKeyInSection(key, section.prefix) && !builtinKeys.includes(key));
 
   return [...builtinKeys, ...discoveredKeys];
 }
@@ -82,6 +74,7 @@ function listSectionKeys(section: SectionDefinition): string[] {
 function readItemLabel(key: string): string {
   if (isBuiltinKey(key)) return t(buildMessageName(key));
 
+  // 名前が空のときも、何の項目か分かるよう key を出す
   return stored.seen?.[key]?.label || key;
 }
 
@@ -120,48 +113,68 @@ function buildRow(key: string): HTMLElement {
   toggle.className = 'switch';
   toggle.id = id;
   toggle.checked = !isHidden(key);
-  toggle.addEventListener('change', () => saveHidden({ [key]: !toggle.checked }));
+  toggle.addEventListener('change', () => {
+    saveHidden({ [key]: !toggle.checked }).catch(reportError);
+  });
 
   row.append(label, toggle);
 
   return row;
 }
 
-function buildSectionButton(messageName: string, keys: readonly string[], hidden: boolean): HTMLButtonElement {
+/** 欄の項目をまとめて切り替えるボタン。shouldHide が true なら全部隠し、false なら全部表示する */
+function buildSectionButton(
+  { messageName, keys, shouldHide }: { messageName: string; keys: readonly string[]; shouldHide: boolean },
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = t(messageName);
-  button.addEventListener('click', () => saveHidden(Object.fromEntries(keys.map((key) => [key, hidden]))));
+  button.addEventListener('click', () => {
+    saveHidden(Object.fromEntries(keys.map((key) => [key, shouldHide]))).catch(reportError);
+  });
 
   return button;
+}
+
+function buildSectionHead(section: SectionDefinition, keys: readonly string[]): HTMLElement {
+  const title = document.createElement('h2');
+  title.className = 'section-title';
+  title.textContent = t(section.titleMessage);
+
+  const buttons = document.createElement('div');
+  buttons.className = 'section-buttons';
+  buttons.append(
+    buildSectionButton({ messageName: 'buttonShowAll', keys, shouldHide: false }),
+    buildSectionButton({ messageName: 'buttonHideAll', keys, shouldHide: true }),
+  );
+
+  const head = document.createElement('div');
+  head.className = 'section-head';
+  head.append(title, buttons);
+
+  return head;
+}
+
+/** 「もっと見る」を x.com で一度も開いていないときの案内。開いていれば null */
+function buildMoreNotSeenNote(): HTMLElement | null {
+  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
+  if (hasSeenMoreMenu) return null;
+
+  const note = document.createElement('p');
+  note.className = 'note';
+  note.textContent = t('noteMoreNotSeen');
+
+  return note;
 }
 
 function buildSection(section: SectionDefinition): HTMLElement {
   const keys = listSectionKeys(section);
   const element = document.createElement('section');
   element.className = 'section';
+  element.append(buildSectionHead(section, keys));
 
-  const head = document.createElement('div');
-  head.className = 'section-head';
-  const title = document.createElement('h2');
-  title.className = 'section-title';
-  title.textContent = t(section.titleMessage);
-  const buttons = document.createElement('div');
-  buttons.className = 'section-buttons';
-  buttons.append(
-    buildSectionButton('buttonShowAll', keys, false),
-    buildSectionButton('buttonHideAll', keys, true),
-  );
-  head.append(title, buttons);
-  element.append(head);
-
-  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => key.startsWith('more.'));
-  if (section.prefix === 'more' && !hasSeenMoreMenu) {
-    const hint = document.createElement('p');
-    hint.className = 'note';
-    hint.textContent = t('noteMoreNotSeen');
-    element.append(hint);
-  }
+  const note = section.prefix === 'more' ? buildMoreNotSeenNote() : null;
+  if (note) element.append(note);
 
   element.append(...keys.map(buildRow));
 
@@ -180,7 +193,7 @@ function renderNotRunBanner(): void {
   requireElement('not-run-banner', HTMLDivElement).hidden = Boolean(stored.status?.ranAt);
 }
 
-/** 描き直しても、操作中のスイッチからフォーカスが外れないようにする */
+/** storage の値に合わせて画面全体を描き直す。描き直しても、操作中のスイッチからフォーカスが外れないようにする */
 function render(): void {
   const focusedId = document.activeElement?.id;
 
@@ -191,14 +204,19 @@ function render(): void {
   if (focusedId) document.getElementById(focusedId)?.focus();
 }
 
-/** 「新規」の印は一度見せたら、保存の側から外す */
+/**
+ * 「新規」の印は一度見せたら、保存の側から外す。
+ * 画面を開いてからも content script が seen に項目を足しうるので、書く直前に読み直して重ねる
+ */
 async function clearNewBadges(): Promise<void> {
   if (newKeysOnOpen.size === 0) return;
 
-  const seen = stored.seen ?? {};
-  const cleared = { ...seen };
-  for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
-  await browser.storage.local.set({ seen: cleared });
+  await updateStoredState(['seen'], ({ seen = {} }) => {
+    const cleared = { ...seen };
+    for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
+
+    return { seen: cleared };
+  });
 }
 
 // --- 起動 ---
@@ -207,9 +225,16 @@ function bindStaticControls(): void {
   const promote = requireElement('layout-promote', HTMLInputElement);
   const widen = requireElement('layout-widen', HTMLInputElement);
 
-  promote.addEventListener('change', () => saveLayout({ promote: promote.checked }));
-  widen.addEventListener('change', () => saveLayout({ widen: widen.checked }));
-  requireElement('reset', HTMLButtonElement).addEventListener('click', () => browser.storage.local.remove(['hidden', 'layout']));
+  promote.addEventListener('change', () => {
+    saveLayout({ promote: promote.checked }).catch(reportError);
+  });
+  widen.addEventListener('change', () => {
+    saveLayout({ widen: widen.checked }).catch(reportError);
+  });
+  // 初期設定に戻すのは表示の設定（hidden・layout）だけ。見つけた項目（seen）と動いた記録（status）は残す
+  requireElement('reset', HTMLButtonElement).addEventListener('click', () => {
+    browser.storage.local.remove(['hidden', 'layout']).catch(reportError);
+  });
 }
 
 browser.storage.onChanged.addListener((changes, area) => {
@@ -222,9 +247,9 @@ browser.storage.onChanged.addListener((changes, area) => {
 applyStaticMessages();
 bindStaticControls();
 browser.storage.local.get(null).then(async (items) => {
-  stored = items as StoredState;
+  stored = toStoredState(items);
   const seen = stored.seen ?? {};
   newKeysOnOpen = new Set(Object.keys(seen).filter((key) => seen[key]?.new));
   render();
   await clearNewBadges();
-});
+}).catch(reportError);
