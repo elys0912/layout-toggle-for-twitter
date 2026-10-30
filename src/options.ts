@@ -78,14 +78,28 @@ function readItemLabel(key: string): string {
   return stored.seen?.[key]?.label || key;
 }
 
-async function saveHidden(changes: Record<string, boolean>): Promise<void> {
-  stored.hidden = { ...stored.hidden, ...changes };
-  await browser.storage.local.set({ hidden: stored.hidden });
+/**
+ * 保存が成功してから手元の値を変える。失敗したら、保存値のままの手元の値で画面を描き直し、
+ * 切り替えたスイッチを元に戻す
+ */
+async function saveSettings(changes: Pick<StoredState, 'hidden' | 'layout'>): Promise<void> {
+  try {
+    await browser.storage.local.set(changes);
+  } catch (error) {
+    reportError(error);
+    render();
+    return;
+  }
+
+  stored = { ...stored, ...changes };
 }
 
-async function saveLayout(changes: Partial<Layout>): Promise<void> {
-  stored.layout = { ...stored.layout, ...changes };
-  await browser.storage.local.set({ layout: stored.layout });
+function saveHidden(changes: Record<string, boolean>): Promise<void> {
+  return saveSettings({ hidden: { ...stored.hidden, ...changes } });
+}
+
+function saveLayout(changes: Partial<Layout>): Promise<void> {
+  return saveSettings({ layout: { ...stored.layout, ...changes } });
 }
 
 // --- 描画 ---
