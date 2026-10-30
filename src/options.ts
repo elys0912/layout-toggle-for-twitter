@@ -32,6 +32,8 @@ const SECTIONS: readonly SectionDefinition[] = [
 let stored: StoredState = {};
 // 画面を開いた時点で「新規」だった項目。保存の印は開いた直後に外すが、この画面を閉じるまでは印を出し続ける
 let newKeysOnOpen = new Set<string>();
+// 最後に欄を作ったときの、欄の並びと見た目（buildSectionsSnapshot）。変わらなければ欄を作り直さない
+let renderedSectionsSnapshot = '';
 
 function reportError(error: unknown): void {
   console.error('Layout Toggle for Twitter:', error);
@@ -77,6 +79,14 @@ function readItemLabel(key: string): string {
   return stored.seen?.[key]?.label || key;
 }
 
+function hasNewBadge(key: string): boolean {
+  return newKeysOnOpen.has(key) || Boolean(stored.seen?.[key]?.new);
+}
+
+function hasSeenMoreMenu(): boolean {
+  return Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
+}
+
 /**
  * 保存が成功してから手元の値を変える。失敗したら、保存値のままの手元の値で画面を描き直し、
  * 切り替えたスイッチを元に戻す
@@ -119,12 +129,13 @@ function buildRow(key: string): HTMLElement {
   const label = document.createElement('label');
   label.htmlFor = id;
   label.textContent = readItemLabel(key);
-  if (newKeysOnOpen.has(key) || stored.seen?.[key]?.new) label.append(buildBadge('badgeNew'));
+  if (hasNewBadge(key)) label.append(buildBadge('badgeNew'));
 
   const toggle = document.createElement('input');
   toggle.type = 'checkbox';
   toggle.className = 'switch';
   toggle.id = id;
+  toggle.dataset.key = key;
   toggle.checked = !isHidden(key);
   toggle.addEventListener('change', () => {
     saveHidden({ [key]: !toggle.checked }).catch(reportError);
@@ -170,8 +181,7 @@ function buildSectionHead(section: SectionDefinition, keys: readonly string[]): 
 
 /** 「もっと見る」を x.com で一度も開いていないときの案内。開いていれば null */
 function buildMoreNotSeenNote(): HTMLElement | null {
-  const hasSeenMoreMenu = Object.keys(stored.seen ?? {}).some((key) => isKeyInSection(key, 'more'));
-  if (hasSeenMoreMenu) return null;
+  if (hasSeenMoreMenu()) return null;
 
   const note = document.createElement('p');
   note.className = 'note';
@@ -206,15 +216,49 @@ function renderNotRunBanner(): void {
   requireElement('not-run-banner', HTMLDivElement).hidden = Boolean(stored.status?.ranAt);
 }
 
-/** storage の値に合わせて画面全体を描き直す。描き直しても、操作中のスイッチからフォーカスが外れないようにする */
-function render(): void {
-  const focusedId = document.activeElement?.id;
+/**
+ * 欄の作りを決める値（項目の並び・名前・「新規」の印・「もっと見る」の案内）を 1 つの文字列にする。
+ * seen の href・iconPaths・order は欄に出ないので含めない
+ */
+function buildSectionsSnapshot(): string {
+  const rows = SECTIONS.map((section) => (
+    listSectionKeys(section).map((key) => [key, readItemLabel(key), hasNewBadge(key)])
+  ));
 
+  return JSON.stringify({ rows, hasSeenMoreMenu: hasSeenMoreMenu() });
+}
+
+/** 項目のスイッチを、作り直さずに保存値に合わせる */
+function syncItemToggles(): void {
+  for (const toggle of document.querySelectorAll<HTMLInputElement>('#sections input[data-key]')) {
+    toggle.checked = !isHidden(toggle.dataset.key ?? '');
+  }
+}
+
+/**
+ * 欄を保存値に合わせる。x.com を開いている間は content script が seen・status を書くたびに呼ばれるので、
+ * 欄の作りが変わらなければスイッチだけ合わせ、スクロール位置とフォーカスを動かさない。
+ * 作り直すときも、操作中のスイッチからフォーカスが外れないようにする
+ */
+function renderSections(): void {
+  const snapshot = buildSectionsSnapshot();
+  if (snapshot === renderedSectionsSnapshot) {
+    syncItemToggles();
+    return;
+  }
+
+  const focusedId = document.activeElement?.id;
   requireElement('sections', HTMLDivElement).replaceChildren(...SECTIONS.map(buildSection));
-  renderLayout();
-  renderNotRunBanner();
+  renderedSectionsSnapshot = snapshot;
 
   if (focusedId) document.getElementById(focusedId)?.focus();
+}
+
+/** storage の値に合わせて画面を描き直す */
+function render(): void {
+  renderSections();
+  renderLayout();
+  renderNotRunBanner();
 }
 
 /**
