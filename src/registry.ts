@@ -104,7 +104,12 @@ export const MORE_ITEMS: readonly LinkRule[] = [
   { key: 'more.settings', by: 'testid', testid: SETTINGS_TESTID },
 ];
 
-// --- content script が DOM を探す selector。見分け方の表と同じ testid から作る ---
+// --- content script が DOM を探す selector。testid を使うものは、見分け方の表と同じ定数から作る ---
+
+export const HEADER_SELECTOR = 'header[role="banner"]';
+export const NAV_SELECTOR = 'nav[role="navigation"]';
+export const PRIMARY_COLUMN_SELECTOR = '[data-testid="primaryColumn"]';
+export const SIDEBAR_COLUMN_SELECTOR = '[data-testid="sidebarColumn"]';
 
 export const MORE_BUTTON_SELECTOR = buildTestidSelector(MORE_BUTTON_TESTID);
 

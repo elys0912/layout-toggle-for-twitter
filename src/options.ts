@@ -15,6 +15,7 @@ import {
   toStoredState,
 } from './registry.ts';
 import type { Layout, LinkRule, SectionPrefix, SideBlockRule, StoredState } from './registry.ts';
+import { updateStoredState } from './storage.ts';
 
 interface SectionDefinition {
   prefix: SectionPrefix;
@@ -208,10 +209,12 @@ function render(): void {
 async function clearNewBadges(): Promise<void> {
   if (newKeysOnOpen.size === 0) return;
 
-  const { seen = {} } = toStoredState(await browser.storage.local.get('seen'));
-  const cleared = { ...seen };
-  for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
-  await browser.storage.local.set({ seen: cleared });
+  await updateStoredState(['seen'], ({ seen = {} }) => {
+    const cleared = { ...seen };
+    for (const key of newKeysOnOpen) cleared[key] = { ...seen[key], new: false };
+
+    return { seen: cleared };
+  });
 }
 
 // --- 起動 ---
