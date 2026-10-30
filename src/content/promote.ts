@@ -2,7 +2,7 @@
 
 import { buildKeyPrefix, computePromotions, isKeyInSection, resolveLayout } from '../registry.ts';
 import type { MoreItem } from '../registry.ts';
-import { syncClones } from './clone.ts';
+import { CLONE_ATTRIBUTE, syncClones } from './clone.ts';
 import { readSeen } from './seen-store.ts';
 import { getStored, isHidden } from './state.ts';
 
@@ -17,7 +17,7 @@ function listMoreItems(): MoreItem[] {
 /** 移す項目の複製を左メニューに置き、移した項目の key を返す */
 export function applyPromotions(nav: Element, presentNavKeys: readonly string[]): string[] {
   const navHrefs = new Set(
-    [...nav.querySelectorAll(':scope > a[href]:not([data-xlt-clone])')]
+    [...nav.querySelectorAll(`:scope > a[href]:not([${CLONE_ATTRIBUTE}])`)]
       .map((element) => element.getAttribute('href'))
       .filter((href): href is string => href !== null),
   );

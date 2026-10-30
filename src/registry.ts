@@ -314,11 +314,15 @@ export function shouldWiden(input: {
   presentSideKeys: readonly string[];
   isHidden: (key: string) => boolean;
 }): boolean {
-  const blockKeys = input.presentSideKeys.filter((key) => key !== SPACER_KEY);
-  if (!input.layout.widen || blockKeys.length === 0) return false;
+  const { layout, presentSideKeys, isHidden } = input;
+  const blockKeys = presentSideKeys.filter((key) => key !== SPACER_KEY);
+  if (!layout.widen || blockKeys.length === 0) return false;
 
-  return blockKeys.every(input.isHidden);
+  return blockKeys.every(isHidden);
 }
+
+// 隠すときの宣言。X の CSS より優先させるため !important を付ける
+export const HIDE_DECLARATION = 'display:none!important';
 
 /**
  * 隠す項目の CSS。key は見出しの文字を含みうるので、CSS の文字列としてエスケープする。
@@ -326,7 +330,7 @@ export function shouldWiden(input: {
  */
 export function buildHiddenCss(keys: readonly string[]): string {
   return keys
-    .map((key) => `[data-xlt="${escapeCssString(key)}"]{display:none!important}`)
+    .map((key) => `[data-xlt="${escapeCssString(key)}"]{${HIDE_DECLARATION}}`)
     .join('\n');
 }
 
@@ -366,5 +370,6 @@ export function toStoredState(items: Record<string, unknown>): StoredState {
 
 /** 組み込みの項目の翻訳名。例：'nav.home' → 'item_nav_home' */
 export function buildMessageName(key: string): string {
+  // 組み込みの key は '.' を 1 つだけ含むので、最初の 1 つを置き換えれば足りる
   return `item_${key.replace('.', '_')}`;
 }

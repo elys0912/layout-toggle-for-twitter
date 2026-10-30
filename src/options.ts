@@ -39,6 +39,7 @@ function reportError(error: unknown): void {
 }
 
 function t(name: string): string {
+  // getMessage は定義の無い名前に空文字を返すので、?? でなく || で名前に戻す
   return browser.i18n.getMessage(name) || name;
 }
 
@@ -73,6 +74,7 @@ function listSectionKeys(section: SectionDefinition): string[] {
 function readItemLabel(key: string): string {
   if (isBuiltinKey(key)) return t(buildMessageName(key));
 
+  // 名前が空のときも、何の項目か分かるよう key を出す
   return stored.seen?.[key]?.label || key;
 }
 
@@ -191,7 +193,7 @@ function renderNotRunBanner(): void {
   requireElement('not-run-banner', HTMLDivElement).hidden = Boolean(stored.status?.ranAt);
 }
 
-/** 描き直しても、操作中のスイッチからフォーカスが外れないようにする */
+/** storage の値に合わせて画面全体を描き直す。描き直しても、操作中のスイッチからフォーカスが外れないようにする */
 function render(): void {
   const focusedId = document.activeElement?.id;
 
@@ -229,6 +231,7 @@ function bindStaticControls(): void {
   widen.addEventListener('change', () => {
     saveLayout({ widen: widen.checked }).catch(reportError);
   });
+  // 初期設定に戻すのは表示の設定（hidden・layout）だけ。見つけた項目（seen）と動いた記録（status）は残す
   requireElement('reset', HTMLButtonElement).addEventListener('click', () => {
     browser.storage.local.remove(['hidden', 'layout']).catch(reportError);
   });

@@ -12,6 +12,7 @@
 import {
   BUILTIN_ITEMS,
   HEADER_SELECTOR,
+  HIDE_DECLARATION,
   NAV_SELECTOR,
   PRIMARY_COLUMN_SELECTOR,
   SIDEBAR_COLUMN_SELECTOR,
@@ -30,7 +31,7 @@ import { getStored, isHidden, replaceStored } from './content/state.ts';
 // 投稿を並べる入れ物（primaryColumn の 2 段下）にも 600px の上限がある（2026-10-30 に確認）。
 // 返信・いいねのボタンの行の上限は、ボタンが端まで散らばらないよう残す
 const WIDEN_CSS = [
-  `${SIDEBAR_COLUMN_SELECTOR}{display:none!important}`,
+  `${SIDEBAR_COLUMN_SELECTOR}{${HIDE_DECLARATION}}`,
   `${PRIMARY_COLUMN_SELECTOR}{max-width:none!important}`,
   `${PRIMARY_COLUMN_SELECTOR} > div > div{max-width:none!important}`,
 ].join('\n');
@@ -42,6 +43,11 @@ document.documentElement.append(styleElement);
 let isLoaded = false;
 let isScanScheduled = false;
 
+/**
+ * 隠す CSS と、タイムラインを広げる CSS を差し込む。
+ * 「もっと見る」のメニューは開いたときにだけ現れ、presentKeys に入らない。
+ * 印の付いた要素がいつ現れても隠れるよう、ページにある項目に限らず、知っている key をすべて含める
+ */
 function updateCss(presentKeys: readonly string[]): void {
   const keys = new Set([
     ...BUILTIN_ITEMS.map((item) => item.key),
@@ -52,7 +58,7 @@ function updateCss(presentKeys: readonly string[]): void {
   const isWidened = shouldWiden({ layout: resolveLayout(getStored()), presentSideKeys, isHidden });
   const css = [
     buildHiddenCss([...keys].filter(isHidden)),
-    '[data-xlt-promoted]{display:none!important}',
+    `[data-xlt-promoted]{${HIDE_DECLARATION}}`,
     isWidened ? WIDEN_CSS : '',
   ].join('\n');
 

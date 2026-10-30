@@ -21,6 +21,7 @@ export function readSeen(): Record<string, SeenEntry> {
 
 export function recordSeen(key: string, entry: SeenEntry): void {
   const known = readSeen()[key];
+  // 組み込みの項目は設定画面に最初から並ぶので、新規の印を付けない
   const isNew = !known && !isBuiltinKey(key);
   const merged: SeenEntry = { ...known, ...entry, ...(isNew ? { new: true } : {}) };
   if (known && JSON.stringify(known) === JSON.stringify(merged)) return;

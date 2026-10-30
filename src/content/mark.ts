@@ -15,7 +15,13 @@ import {
   readHeadingTitle,
 } from '../registry.ts';
 import type { LinkAttributes, LinkRule, SectionPrefix } from '../registry.ts';
+import { CLONE_ATTRIBUTE } from './clone.ts';
 import { recordSeen } from './seen-store.ts';
+
+// 右サイドバーのブロックが並ぶ親を探す深さの上限。見つからないページで降り続けないため、余裕を見た値
+const MAX_CONTAINER_DEPTH = 12;
+// ブロックが並ぶ親とみなす子の数。sidebarColumn の下の入れ物は子が 1〜2 個で、ブロックの親は検索・トレンド・フッターなど 3 つ以上を持つ
+const MIN_BLOCK_COUNT = 3;
 
 function setMark(element: HTMLElement, key: string): void {
   if (element.dataset.xlt !== key) element.dataset.xlt = key;
@@ -23,6 +29,11 @@ function setMark(element: HTMLElement, key: string): void {
 
 function readLink(element: Element): LinkAttributes {
   return { testid: element.getAttribute('data-testid'), href: element.getAttribute('href') };
+}
+
+/** 印を付ける対象か。複製はこの拡張が置いたものなので外す */
+function isMarkableElement(element: Element | null): element is HTMLElement {
+  return element instanceof HTMLElement && !element.hasAttribute(CLONE_ATTRIBUTE);
 }
 
 function readLabel(element: Element): string {
@@ -46,7 +57,7 @@ export function markNav(header: Element, nav: Element | null): string[] {
   const elements = [
     ...(nav ? nav.children : []),
     ...BELOW_NAV_BUTTON_SELECTORS.map((selector) => header.querySelector(selector)),
-  ].filter((element): element is HTMLElement => element instanceof HTMLElement && !element.hasAttribute('data-xlt-clone'));
+  ].filter(isMarkableElement);
   const keys: string[] = [];
 
   for (const element of elements) {
@@ -77,12 +88,21 @@ export function markMoreMenu(): void {
       .filter((d): d is string => Boolean(d));
 
     setMark(element, key);
+    // a[href] で選ぶので link.href は null にならない。?? '' は型を string にそろえるため
     recordSeen(key, { label: (element.textContent ?? '').trim(), href: link.href ?? '', iconPaths, order });
   });
 }
 
 function countDescendants(element: Element): number {
   return element.getElementsByTagName('*').length;
+}
+
+/** 子のうち、子孫の要素がいちばん多いもの。同じ数なら先の子。子が無ければ undefined */
+function pickLargestChild(element: Element): Element | undefined {
+  return [...element.children].reduce<Element | undefined>(
+    (largest, child) => (!largest || countDescendants(child) > countDescendants(largest) ? child : largest),
+    undefined,
+  );
 }
 
 /**
@@ -92,13 +112,10 @@ function countDescendants(element: Element): number {
 function locateBlockContainer(column: Element): Element | null {
   let current: Element | undefined = column;
 
-  for (let depth = 0; current && depth < 12; depth++) {
-    if (current.children.length >= 3) return current;
+  for (let depth = 0; current && depth < MAX_CONTAINER_DEPTH; depth++) {
+    if (current.children.length >= MIN_BLOCK_COUNT) return current;
 
-    current = [...current.children].reduce<Element | undefined>(
-      (largest, child) => (!largest || countDescendants(child) > countDescendants(largest) ? child : largest),
-      undefined,
-    );
+    current = pickLargestChild(current);
   }
 
   return null;
