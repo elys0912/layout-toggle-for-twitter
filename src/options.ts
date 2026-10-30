@@ -34,6 +34,8 @@ let stored: StoredState = {};
 let newKeysOnOpen = new Set<string>();
 // 最後に欄を作ったときの、欄の並びと見た目（buildSectionsSnapshot）。変わらなければ欄を作り直さない
 let renderedSectionsSnapshot = '';
+// 前の設定の保存が終わる時点。手元の値は保存の成功後に変わるので、次の保存の値は前の保存が終わってから作る
+let previousSettingsSave: Promise<void> = Promise.resolve();
 
 function reportError(error: unknown): void {
   console.error('Layout Toggle for Twitter:', error);
@@ -91,7 +93,7 @@ function hasSeenMoreMenu(): boolean {
  * 保存が成功してから手元の値を変える。失敗したら、保存値のままの手元の値で画面を描き直し、
  * 切り替えたスイッチを元に戻す
  */
-async function saveSettings(changes: Pick<StoredState, 'hidden' | 'layout'>): Promise<void> {
+async function writeSettings(changes: Pick<StoredState, 'hidden' | 'layout'>): Promise<void> {
   try {
     await browser.storage.local.set(changes);
   } catch (error) {
@@ -103,12 +105,24 @@ async function saveSettings(changes: Pick<StoredState, 'hidden' | 'layout'>): Pr
   stored = { ...stored, ...changes };
 }
 
+/**
+ * 設定の保存を 1 つずつ順に行う。続けて切り替えたとき、後の保存が前の変更を含まない値で上書きしないため。
+ * buildChanges は前の保存が終わってから呼ぶ
+ */
+function saveSettings(buildChanges: () => Pick<StoredState, 'hidden' | 'layout'>): Promise<void> {
+  const save = previousSettingsSave.then(() => writeSettings(buildChanges()));
+  // 前の保存が例外で終わっても、次の保存は行う
+  previousSettingsSave = save.catch(() => undefined);
+
+  return save;
+}
+
 function saveHidden(changes: Record<string, boolean>): Promise<void> {
-  return saveSettings({ hidden: { ...stored.hidden, ...changes } });
+  return saveSettings(() => ({ hidden: { ...stored.hidden, ...changes } }));
 }
 
 function saveLayout(changes: Partial<Layout>): Promise<void> {
-  return saveSettings({ layout: { ...stored.layout, ...changes } });
+  return saveSettings(() => ({ layout: { ...stored.layout, ...changes } }));
 }
 
 // --- 描画 ---
