@@ -2,11 +2,24 @@
 // content script と設定画面は esbuild でこのファイルを取り込み、テストは node がそのまま読む。
 // 見分け方は 2026-10-29 に x.com/home（日本語表示）の DOM を読んで決めた。
 
-export interface LinkRule {
-  key: string;
-  testid?: string;
-  href?: string;
-  hrefPattern?: RegExp;
+/** リンクの見分け方。by で、リンクのどの属性を比べるかを決める */
+export type LinkRule =
+  | { key: string; by: 'testid'; testid: string }
+  | { key: string; by: 'href'; href: string }
+  | { key: string; by: 'hrefPattern'; hrefPattern: RegExp };
+
+/**
+ * 左メニューの、移す枠に数えないボタン。
+ * more は「もっと見る」を開くボタン、belowNav は nav の外（左メニューの下）にあるボタン
+ */
+export type NavButton = 'more' | 'belowNav';
+
+export type NavRule = LinkRule & { button?: NavButton };
+
+/** identifyLink が比べる、リンクの属性 */
+export interface LinkAttributes {
+  testid: string | null;
+  href: string | null;
 }
 
 export interface SideBlockRule {
@@ -53,33 +66,53 @@ export interface QueryableBlock {
   querySelector(selector: string): { textContent: string | null } | null;
 }
 
+// 見分け方の表と、content script の DOM の探索の両方で使う testid
+const EXPLORE_TESTID = 'AppTabBar_Explore_Link';
+const MORE_BUTTON_TESTID = 'AppTabBar_More_Menu';
+const SETTINGS_TESTID = 'settings';
+
 // 左メニュー（header[role="banner"] の中）。testid が無い項目は href で見分ける
-export const NAV_ITEMS: readonly LinkRule[] = [
-  { key: 'nav.home', testid: 'AppTabBar_Home_Link' },
-  { key: 'nav.explore', testid: 'AppTabBar_Explore_Link' },
-  { key: 'nav.notifications', testid: 'AppTabBar_Notifications_Link' },
-  { key: 'nav.messages', testid: 'AppTabBar_DirectMessage_Link' },
-  { key: 'nav.calls', testid: 'AppTabBar_Calls_Link' },
-  { key: 'nav.grok', href: '/i/grok' },
-  { key: 'nav.history', href: '/i/history' },
-  { key: 'nav.premium', testid: 'premium-signup-tab' },
-  { key: 'nav.profile', testid: 'AppTabBar_Profile_Link' },
-  { key: 'nav.more', testid: 'AppTabBar_More_Menu' },
-  { key: 'nav.post', testid: 'SideNav_NewTweet_Button' },
-  { key: 'nav.account', testid: 'SideNav_AccountSwitcher_Button' },
+export const NAV_ITEMS: readonly NavRule[] = [
+  { key: 'nav.home', by: 'testid', testid: 'AppTabBar_Home_Link' },
+  { key: 'nav.explore', by: 'testid', testid: EXPLORE_TESTID },
+  { key: 'nav.notifications', by: 'testid', testid: 'AppTabBar_Notifications_Link' },
+  { key: 'nav.messages', by: 'testid', testid: 'AppTabBar_DirectMessage_Link' },
+  { key: 'nav.calls', by: 'testid', testid: 'AppTabBar_Calls_Link' },
+  { key: 'nav.grok', by: 'href', href: '/i/grok' },
+  { key: 'nav.history', by: 'href', href: '/i/history' },
+  { key: 'nav.premium', by: 'testid', testid: 'premium-signup-tab' },
+  { key: 'nav.profile', by: 'testid', testid: 'AppTabBar_Profile_Link' },
+  { key: 'nav.more', by: 'testid', testid: MORE_BUTTON_TESTID, button: 'more' },
+  { key: 'nav.post', by: 'testid', testid: 'SideNav_NewTweet_Button', button: 'belowNav' },
+  { key: 'nav.account', by: 'testid', testid: 'SideNav_AccountSwitcher_Button', button: 'belowNav' },
 ];
 
 // 「もっと見る」の中（#layers の [role="menu"]）。リストとコミュニティは href の先頭にユーザー名が入る
 export const MORE_ITEMS: readonly LinkRule[] = [
-  { key: 'more.lists', hrefPattern: /^\/[^/]+\/lists$/ },
-  { key: 'more.communities', hrefPattern: /^\/[^/]+\/communities$/ },
-  { key: 'more.studio', href: '/i/jf/creators/studio' },
-  { key: 'more.notes', href: '/i/communitynotes' },
-  { key: 'more.business', href: '/i/verified-orgs-signup' },
-  { key: 'more.ads', hrefPattern: /^https:\/\/ads\.x\.com\// },
-  { key: 'more.spaces', href: '/i/spaces/start' },
-  { key: 'more.settings', testid: 'settings' },
+  { key: 'more.lists', by: 'hrefPattern', hrefPattern: /^\/[^/]+\/lists$/ },
+  { key: 'more.communities', by: 'hrefPattern', hrefPattern: /^\/[^/]+\/communities$/ },
+  { key: 'more.studio', by: 'href', href: '/i/jf/creators/studio' },
+  { key: 'more.notes', by: 'href', href: '/i/communitynotes' },
+  { key: 'more.business', by: 'href', href: '/i/verified-orgs-signup' },
+  { key: 'more.ads', by: 'hrefPattern', hrefPattern: /^https:\/\/ads\.x\.com\// },
+  { key: 'more.spaces', by: 'href', href: '/i/spaces/start' },
+  { key: 'more.settings', by: 'testid', testid: SETTINGS_TESTID },
 ];
+
+// --- content script が DOM を探す selector。見分け方の表と同じ testid から作る ---
+
+export const MORE_BUTTON_SELECTOR = buildTestidSelector(MORE_BUTTON_TESTID);
+
+// 「もっと見る」のメニューだけを選ぶ。投稿の「…」など、他のメニューも #layers に出る
+export const MORE_MENU_SELECTOR = `#layers [role="menu"]:has(a${buildTestidSelector(SETTINGS_TESTID)})`;
+
+// 複製の元にする左メニューの項目。中身の作りが素直な「話題を検索」
+export const CLONE_TEMPLATE_SELECTOR = buildTestidSelector(EXPLORE_TESTID);
+
+// nav の外（左メニューの下）にあるボタン
+export const BELOW_NAV_BUTTON_SELECTORS: readonly string[] = NAV_ITEMS.flatMap((item) => (
+  item.button === 'belowNav' && item.by === 'testid' ? [buildTestidSelector(item.testid)] : []
+));
 
 // 右サイドバーのブロック。上から順に判定する。
 // live の手がかり（pill-contents-container）は他のブロックにも出うるので最後に置く
@@ -137,22 +170,29 @@ const DEFAULT_LAYOUT: Layout = { widen: false, promote: true };
 
 // 隠すと「もっと見る」から 1 つ移せる左メニューの項目。ボタン類と、もっと見る自体は数えない
 export const SLOT_KEYS: readonly string[] = NAV_ITEMS
-  .map((item) => item.key)
-  .filter((key) => !['nav.more', 'nav.post', 'nav.account'].includes(key));
+  .filter((item) => item.button === undefined)
+  .map((item) => item.key);
+
+function buildTestidSelector(testid: string): string {
+  return `[data-testid="${testid}"]`;
+}
 
 /** リンクの testid と href から、項目の key を返す。どれにも当てはまらなければ null */
-export function identifyLink(
-  link: { testid: string | null; href: string | null },
-  rules: readonly LinkRule[],
-): string | null {
-  const matched = rules.find((rule) => {
-    if (rule.testid) return link.testid === rule.testid;
-    if (rule.href) return link.href === rule.href;
+export function identifyLink(link: LinkAttributes, rules: readonly LinkRule[]): string | null {
+  const matched = rules.find((rule) => matchesLink(link, rule));
 
-    return rule.hrefPattern?.test(link.href ?? '') ?? false;
-  });
+  return matched?.key ?? null;
+}
 
-  return matched ? matched.key : null;
+function matchesLink(link: LinkAttributes, rule: LinkRule): boolean {
+  switch (rule.by) {
+    case 'testid':
+      return link.testid === rule.testid;
+    case 'href':
+      return link.href === rule.href;
+    case 'hrefPattern':
+      return rule.hrefPattern.test(link.href ?? '');
+  }
 }
 
 /** 欄の項目の key に共通する先頭。例：'more' → 'more.' */

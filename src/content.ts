@@ -3,8 +3,12 @@
 // 「もっと見る」から移す項目は、左メニューの既存の項目を複製して作る。
 
 import {
+  BELOW_NAV_BUTTON_SELECTORS,
   BUILTIN_ITEMS,
+  CLONE_TEMPLATE_SELECTOR,
+  MORE_BUTTON_SELECTOR,
   MORE_ITEMS,
+  MORE_MENU_SELECTOR,
   NAV_ITEMS,
   applyStorageChanges,
   buildHiddenCss,
@@ -22,18 +26,19 @@ import {
   shouldWiden,
   toStoredState,
 } from './registry.ts';
-import type { MoreItem, SeenEntry, StoredState } from './registry.ts';
+import type { LinkAttributes, MoreItem, SeenEntry, StoredState } from './registry.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const MORE_BUTTON_SELECTOR = '[data-testid="AppTabBar_More_Menu"]';
-// 「もっと見る」のメニューだけを選ぶ。投稿の「…」など、他のメニューも #layers に出る
-const MORE_MENU_SELECTOR = '#layers [role="menu"]:has(a[data-testid="settings"])';
+const HEADER_SELECTOR = 'header[role="banner"]';
+const NAV_SELECTOR = 'nav[role="navigation"]';
+const PRIMARY_COLUMN_SELECTOR = '[data-testid="primaryColumn"]';
+const SIDEBAR_COLUMN_SELECTOR = '[data-testid="sidebarColumn"]';
 // 投稿を並べる入れ物（primaryColumn の 2 段下）にも 600px の上限がある（2026-10-30 に確認）。
 // 返信・いいねのボタンの行の上限は、ボタンが端まで散らばらないよう残す
 const WIDEN_CSS = [
-  '[data-testid="sidebarColumn"]{display:none!important}',
-  '[data-testid="primaryColumn"]{max-width:none!important}',
-  '[data-testid="primaryColumn"] > div > div{max-width:none!important}',
+  `${SIDEBAR_COLUMN_SELECTOR}{display:none!important}`,
+  `${PRIMARY_COLUMN_SELECTOR}{max-width:none!important}`,
+  `${PRIMARY_COLUMN_SELECTOR} > div > div{max-width:none!important}`,
 ].join('\n');
 // 見つけた項目をまとめて保存するまでの待ち時間。X の描き直しのたびに書き込まないため
 const SAVE_DELAY_MS = 1000;
@@ -111,7 +116,7 @@ function setMark(element: HTMLElement, key: string): void {
   if (element.dataset.xlt !== key) element.dataset.xlt = key;
 }
 
-function readLink(element: Element): { testid: string | null; href: string | null } {
+function readLink(element: Element): LinkAttributes {
   return { testid: element.getAttribute('data-testid'), href: element.getAttribute('href') };
 }
 
@@ -123,8 +128,7 @@ function readLabel(element: Element): string {
 function markNav(header: Element, nav: Element | null): string[] {
   const elements = [
     ...(nav ? nav.children : []),
-    header.querySelector('[data-testid="SideNav_NewTweet_Button"]'),
-    header.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]'),
+    ...BELOW_NAV_BUTTON_SELECTORS.map((selector) => header.querySelector(selector)),
   ].filter((element): element is HTMLElement => element instanceof HTMLElement && !element.hasAttribute('data-xlt-clone'));
   const keys: string[] = [];
 
@@ -188,7 +192,7 @@ function locateBlockContainer(column: Element): Element | null {
 
 /** 右サイドバーのブロックに印を付け、見つけた key を返す */
 function markSidebar(): string[] {
-  const column = document.querySelector('[data-testid="sidebarColumn"]');
+  const column = document.querySelector(SIDEBAR_COLUMN_SELECTOR);
   const container = column ? locateBlockContainer(column) : null;
   if (!container) return [];
 
@@ -221,7 +225,7 @@ function listMoreItems(): MoreItem[] {
 
 /** 複製の元にする左メニューの項目。中身の作りが素直な「話題を検索」を優先する */
 function pickTemplate(nav: Element): HTMLElement | null {
-  return nav.querySelector<HTMLElement>(':scope > [data-testid="AppTabBar_Explore_Link"]')
+  return nav.querySelector<HTMLElement>(`:scope > ${CLONE_TEMPLATE_SELECTOR}`)
     ?? nav.querySelector<HTMLElement>(':scope > a[data-testid^="AppTabBar_"]');
 }
 
@@ -351,8 +355,8 @@ function updateCss(presentKeys: readonly string[]): void {
 // --- 全体の流れ ---
 
 function scan(): void {
-  const header = document.querySelector('header[role="banner"]');
-  const nav = header?.querySelector('nav[role="navigation"]') ?? null;
+  const header = document.querySelector(HEADER_SELECTOR);
+  const nav = header?.querySelector(NAV_SELECTOR) ?? null;
 
   const presentNavKeys = header ? markNav(header, nav) : [];
   markMoreMenu();
