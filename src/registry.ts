@@ -96,6 +96,22 @@ export const SIDE_BLOCKS: readonly SideBlockRule[] = [
   { key: 'side.live', selector: '[data-testid="pill-contents-container"]' },
 ];
 
+// 設定画面で右サイドバーの項目を並べる順。x.com の画面の上から順。
+// SIDE_BLOCKS は判定の優先順なので、画面の並びとは違う。SIDE_BLOCKS に足したらここにも足す（試験で確かめる）
+export const SIDE_DISPLAY_ORDER: readonly string[] = [
+  'side.search',
+  'side.filters',
+  'side.premium',
+  'side.live',
+  'side.news',
+  'side.scores',
+  'side.trends',
+  'side.follow',
+  'side.footer',
+];
+
+export const SIDE_BLOCKS_IN_DISPLAY_ORDER: readonly SideBlockRule[] = sortByDisplayOrder(SIDE_BLOCKS, SIDE_DISPLAY_ORDER);
+
 export const BUILTIN_ITEMS: readonly (LinkRule | SideBlockRule)[] = [...NAV_ITEMS, ...MORE_ITEMS, ...SIDE_BLOCKS];
 
 const BUILTIN_KEYS: ReadonlySet<string> = new Set(BUILTIN_ITEMS.map((item) => item.key));
@@ -193,6 +209,11 @@ export function mergeHeadingBlocks(keys: readonly (string | null)[]): (string | 
 
     return isHeading && hasSeparateHeading ? next : key;
   });
+}
+
+/** items を、key が order に出てくる順に並べ替えた写しを返す */
+function sortByDisplayOrder<T extends { key: string }>(items: readonly T[], order: readonly string[]): T[] {
+  return [...items].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
 }
 
 export function isBuiltinKey(key: string): boolean {

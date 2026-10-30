@@ -5,7 +5,7 @@
 import {
   MORE_ITEMS,
   NAV_ITEMS,
-  SIDE_BLOCKS,
+  SIDE_BLOCKS_IN_DISPLAY_ORDER,
   applyStorageChanges,
   buildMessageName,
   isBuiltinKey,
@@ -22,27 +22,11 @@ interface SectionDefinition {
   builtinItems: readonly (LinkRule | SideBlockRule)[];
 }
 
-// 右サイドバーは x.com の画面の上から順に並べる。SIDE_BLOCKS は判定の優先順なので、画面の並びとは違う
-const SIDE_DISPLAY_ORDER: readonly string[] = [
-  'side.search',
-  'side.filters',
-  'side.premium',
-  'side.live',
-  'side.news',
-  'side.scores',
-  'side.trends',
-  'side.follow',
-  'side.footer',
-];
-
 const SECTIONS: readonly SectionDefinition[] = [
   { prefix: 'nav', titleMessage: 'sectionNav', builtinItems: NAV_ITEMS },
   { prefix: 'more', titleMessage: 'sectionMore', builtinItems: MORE_ITEMS },
-  {
-    prefix: 'side',
-    titleMessage: 'sectionSide',
-    builtinItems: [...SIDE_BLOCKS].sort((a, b) => SIDE_DISPLAY_ORDER.indexOf(a.key) - SIDE_DISPLAY_ORDER.indexOf(b.key)),
-  },
+  // 右サイドバーは x.com の画面の上から順に並べる
+  { prefix: 'side', titleMessage: 'sectionSide', builtinItems: SIDE_BLOCKS_IN_DISPLAY_ORDER },
 ];
 
 let stored: StoredState = {};

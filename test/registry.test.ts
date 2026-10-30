@@ -8,6 +8,8 @@ import { describe, it } from 'node:test';
 import {
   MORE_ITEMS,
   NAV_ITEMS,
+  SIDE_BLOCKS,
+  SIDE_DISPLAY_ORDER,
   SPACER_KEY,
   applyStorageChanges,
   buildHiddenCss,
@@ -279,6 +281,14 @@ describe('隠すための CSS', () => {
       buildHiddenCss(['side.h:a"b\\c\nd\r\ne\ff']),
       '[data-xlt="side.h:a\\"b\\\\c\\a d\\d \\a e\\c f"]{display:none!important}',
     );
+  });
+});
+
+describe('設定画面の右サイドバーの欄', () => {
+  it('見分けられるブロックは、どれも画面の並びの中に 1 回ずつ出る', () => {
+    const blockKeys = SIDE_BLOCKS.map((block) => block.key).sort();
+
+    assert.deepEqual([...SIDE_DISPLAY_ORDER].sort(), blockKeys);
   });
 });
 
