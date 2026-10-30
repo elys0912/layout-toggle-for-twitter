@@ -309,6 +309,12 @@ describe('見つけた項目の保存', () => {
     });
   });
 
+  it('見つけた項目だけを保存するとき（動いた時刻は保存済み）は、保存値の動いた時刻を消さない', () => {
+    const pending = { seen: { 'more.lists': { order: 0 } }, status: {} };
+
+    assert.deepEqual(mergePendingRecords({ status: { ranAt: 1 } }, pending).status, { ranAt: 1 });
+  });
+
   it('初めて保存するとき（保存値が空）は、手元の記録がそのまま入る', () => {
     const pending = { seen: { 'more.lists': { order: 0 } }, status: { ranAt: 1 } };
 
