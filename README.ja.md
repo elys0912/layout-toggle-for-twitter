@@ -21,7 +21,7 @@ addons.mozilla.org から入れる（審査のあと）。デスクトップ版�
 
 ## 設定
 
-`about:addons` → Layout Toggle for Twitter → 設定。変えた設定は、開いている x.com のタブにすぐ反映される。
+`about:addons` → Layout Toggle for Twitter → 設定。変えた設定は開いている x.com のタブにすぐ反映される。
 
 ## プライバシー
 
