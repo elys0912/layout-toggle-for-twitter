@@ -9,6 +9,9 @@ export const CLONE_ATTRIBUTE = 'data-xlt-clone';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+// 左メニューの項目の名前の部分。幅が狭いと X はこの部分を描かない
+const LABEL_BOX_SELECTOR = 'div[dir]';
+
 // 複製から外す属性。
 // data-testid：identifyLink が元の項目と取り違えないため。data-xlt：印は scan で付け直すため。
 // aria-current・aria-selected：元の項目の「選択中」の見た目を写さないため
@@ -36,7 +39,7 @@ function replaceIcon(clone: Element, iconPaths: readonly string[]): void {
 
 /** 名前を差し替える。幅が狭いと X は名前の部分を描かないので、そのときは何もしない */
 function replaceLabel(clone: Element, label: string): void {
-  const textBox = clone.querySelector('div[dir]');
+  const textBox = clone.querySelector(LABEL_BOX_SELECTOR);
   if (!textBox) return;
 
   const [firstSpan, ...restSpans] = textBox.querySelectorAll('span');
@@ -69,7 +72,7 @@ function buildClone(template: HTMLElement, item: MoreItem): HTMLElement {
     clone.removeAttribute(name);
   }
   clone.setAttribute(CLONE_ATTRIBUTE, item.key);
-  clone.dataset.xltCloneSignature = buildCloneSignature(item);
+  clone.dataset.xltCloneSignature = buildCloneSignature(item, hasLabelBox(template));
   clone.setAttribute('href', item.href);
   clone.setAttribute('aria-label', label);
   replaceIcon(clone, item.iconPaths ?? []);
@@ -79,20 +82,28 @@ function buildClone(template: HTMLElement, item: MoreItem): HTMLElement {
   return clone;
 }
 
-/** 複製の中身を表す文字列。表示の言語を変えると名前が変わるので、key だけでなく名前・リンク先・アイコンも含める */
-function buildCloneSignature(item: MoreItem): string {
-  return JSON.stringify([item.key, item.label ?? '', item.href, item.iconPaths ?? []]);
+function hasLabelBox(element: Element | null): boolean {
+  return element?.querySelector(LABEL_BOX_SELECTOR) != null;
 }
 
-/** 複製を、移す項目の並びと中身に合わせる。どちらも変わっていなければ触らない */
+/**
+ * 複製の中身を表す文字列。表示の言語を変えると名前が変わるので、key だけでなく名前・リンク先・アイコンも含める。
+ * 幅の境目をまたぐと X は左メニューを名前つき・アイコンだけの形に描き直すので、複製元の形（名前の部分の有無）も含める
+ */
+function buildCloneSignature(item: MoreItem, templateHasLabel: boolean): string {
+  return JSON.stringify([item.key, item.label ?? '', item.href, item.iconPaths ?? [], templateHasLabel]);
+}
+
+/** 複製を、移す項目の並びと中身、複製元の形に合わせる。どれも変わっていなければ触らない */
 export function syncClones(nav: Element, promotions: readonly MoreItem[]): void {
+  const template = pickTemplate(nav);
+  const templateHasLabel = hasLabelBox(template);
   const existing = [...nav.querySelectorAll<HTMLElement>(`:scope > [${CLONE_ATTRIBUTE}]`)];
   const existingSignatures = existing.map((element) => element.dataset.xltCloneSignature).join('\n');
-  const wantedSignatures = promotions.map(buildCloneSignature).join('\n');
+  const wantedSignatures = promotions.map((item) => buildCloneSignature(item, templateHasLabel)).join('\n');
   if (existingSignatures === wantedSignatures) return;
 
   existing.forEach((element) => element.remove());
-  const template = pickTemplate(nav);
   if (!template) return;
 
   // もっと見るのボタンの上に並べる。ボタンが無ければ insertBefore は末尾に足す
