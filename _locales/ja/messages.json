@@ -3,7 +3,7 @@
   "extDescription": { "message": "Twitter（x.com）の左メニュー・「もっと見る」の項目と右サイドバーのブロックを、1 つずつ表示・非表示にする。X Corp. とは関係のない個人の拡張。" },
 
   "optionsTitle": { "message": "Layout Toggle for Twitter の設定" },
-  "optionsOnLabel": { "message": "オンの項目を表示" },
+  "optionsOnLabel": { "message": "オン＝表示" },
   "optionsSaved": { "message": "変更は開いている x.com のタブにすぐ反映される。" },
   "optionsDisclaimer": { "message": "X Corp. とは関係のない個人の拡張。" },
 
