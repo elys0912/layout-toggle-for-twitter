@@ -70,7 +70,7 @@ export const MORE_ITEMS: readonly LinkRule[] = [
   { key: 'more.settings', by: 'testid', testid: SETTINGS_TESTID },
 ];
 
-// --- content script が DOM を探す selector。testid を使うものは、見分け方の表と同じ定数から作る ---
+// --- content script が DOM を探す selector。見分け方の表と同じ testid を使うものは、表と同じ定数から作る ---
 
 export const HEADER_SELECTOR = 'header[role="banner"]';
 export const NAV_SELECTOR = 'nav[role="navigation"]';
@@ -79,7 +79,7 @@ export const SIDEBAR_COLUMN_SELECTOR = '[data-testid="sidebarColumn"]';
 
 export const MORE_BUTTON_SELECTOR = buildTestidSelector(MORE_BUTTON_TESTID);
 
-// X がメニューを出す層。「もっと見る」のメニューもここに出る
+// X がメニューなどを重ねて出す層。「もっと見る」のメニューもここに出る
 export const LAYERS_SELECTOR = '#layers';
 
 // 「もっと見る」のメニューだけを選ぶ。投稿の「…」など、他のメニューも #layers に出る
@@ -89,7 +89,7 @@ export const MORE_MENU_SELECTOR = `${LAYERS_SELECTOR} [role="menu"]:has(a${build
 export const CLONE_TEMPLATE_SELECTOR = buildTestidSelector(EXPLORE_TESTID);
 
 // 左メニューの項目のうち、testid が AppTabBar_ で始まるリンク（Grok・履歴・Premium は当たらない）。
-// 「話題を検索」が無いときの複製の元にする。testid の先頭だけで選ぶので、見分け方の表の定数からは作らない
+// 「話題を検索」が無いときの複製の元にする
 export const NAV_TAB_LINK_SELECTOR = 'a[data-testid^="AppTabBar_"]';
 
 // 左メニューの項目の名前の部分。幅が狭いと X はこの部分を描かない

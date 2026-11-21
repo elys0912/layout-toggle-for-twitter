@@ -1,6 +1,6 @@
 // 保存値（storage.local の中身）の形と、DOM を書き換えない判定・計算の関数。
 // content script と設定画面は esbuild でこのファイルを取り込み、テストは node がそのまま読む。
-// x.com の画面の手がかりの表と key の作り方は page-rules.ts に置く。
+// x.com の画面の手がかりの表・DOM を探す selector・key の作り方は page-rules.ts に置く。
 
 import { BUILTIN_ITEMS, NAV_ITEMS, SPACER_KEY } from './page-rules.ts';
 
