@@ -15,7 +15,8 @@ export const CLONE_ATTRIBUTE = 'data-xlt-clone';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // 複製から外す属性。
-// data-testid：testid で要素を探す selector に、複製が元の項目として当たらないようにする。data-xlt：印は scan で付け直すため。
+// data-testid：testid で要素を探す selector に、複製が元の項目として当たらないようにする。
+// data-xlt：複製元の印が残ると、複製元を隠す CSS が複製にも当たるため。複製は scan の印付けから外れる。
 // aria-current・aria-selected：元の項目の「選択中」の見た目を写さないため
 const CLONE_DROPPED_ATTRIBUTES: readonly string[] = ['data-testid', 'data-xlt', 'aria-current', 'aria-selected'];
 
