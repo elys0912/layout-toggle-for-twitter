@@ -18,7 +18,7 @@
 
   "badgeNew": { "message": "新規" },
 
-  "layoutPromote": { "message": "左メニューを隠した分だけ、「もっと見る」の中から上から順に左メニューへ移す" },
+  "layoutPromote": { "message": "左メニューの項目を隠した分だけ、「もっと見る」の中の項目を上から順に左メニューへ移す" },
   "layoutWiden": { "message": "右サイドバーをすべて隠したら、タイムラインを広げる" },
   "noteWidenOff": { "message": "オフのときは、右サイドバーの場所が空いたまま残る。" },
   "noteWidenWaiting": { "message": "右サイドバーに表示中の項目が残っている間は効かない。" },
