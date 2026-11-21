@@ -11,7 +11,7 @@ Optional layout tweaks:
 - When you hide left menu items, the same number of items from "More" can move into the left menu (only the menu items the add-on knows from the start count; the Post button, the account switcher and "More" itself do not).
 - When every right sidebar block is hidden, the timeline can widen into the freed space.
 
-Items are detected by `data-testid` and link targets, not by on-screen text, so it works in any display language.
+Items the add-on knows from the start are detected by `data-testid` and link targets, not by on-screen text, so they work in any display language. Right sidebar blocks it does not know are told apart by their heading text, so they depend on the display language.
 
 This is an independent add-on. It is not affiliated with, endorsed by, or sponsored by X Corp.
 
