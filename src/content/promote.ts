@@ -7,7 +7,7 @@ import { CLONE_ATTRIBUTE, syncClones } from './clone.ts';
 import { readSeen } from './seen-store.ts';
 import { getStored, isHidden } from './state.ts';
 
-// 左メニューへ移した項目の、「もっと見る」の中の元の項目に付ける印。content script の CSS でこの印の付いた項目を隠す
+// 左メニューへ移した項目の、「もっと見る」の中の元の項目に付ける印。content.ts の updateCss が、この印の付いた項目を隠す
 export const PROMOTED_ATTRIBUTE = 'data-xlt-promoted';
 
 function listMoreItems(): MoreItem[] {
