@@ -55,7 +55,7 @@ export const DEFAULT_HIDDEN: readonly string[] = [
 const DEFAULT_LAYOUT: Layout = { widen: false, promote: true };
 
 // 隠すと「もっと見る」から 1 つ移せる左メニューの項目。ボタン類と、もっと見る自体は数えない
-export const SLOT_KEYS: readonly string[] = NAV_ITEMS
+const SLOT_KEYS: readonly string[] = NAV_ITEMS
   .filter((item) => item.button === undefined)
   .map((item) => item.key);
 
