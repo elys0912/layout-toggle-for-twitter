@@ -27,7 +27,7 @@ Open `about:addons` → Layout Toggle for Twitter → Preferences. Changes apply
 
 ## Privacy
 
-No data is collected or transmitted. Settings stay in your browser. See [PRIVACY.md](PRIVACY.md).
+No data is collected or transmitted. Settings and the items it found on x.com stay in your browser. See [PRIVACY.md](PRIVACY.md).
 
 ## Development
 
