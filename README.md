@@ -8,10 +8,10 @@ A Firefox add-on that lets you show or hide, one by one:
 
 Optional layout tweaks:
 
-- When you hide left menu items, the same number of items from "More" can move into the left menu.
+- When you hide left menu items, the same number of items from "More" can move into the left menu (only the menu items the add-on knows from the start count; the Post button, the account switcher and "More" itself do not).
 - When every right sidebar block is hidden, the timeline can widen into the freed space.
 
-Items are detected by `data-testid` and link paths, not by on-screen text, so it works in any display language.
+Items the add-on knows from the start are detected by `data-testid` and link targets, not by on-screen text, so they work in any display language. Right sidebar blocks it does not know are told apart by their heading text, so they depend on the display language.
 
 This is an independent add-on. It is not affiliated with, endorsed by, or sponsored by X Corp.
 
@@ -19,7 +19,7 @@ This is an independent add-on. It is not affiliated with, endorsed by, or sponso
 
 ## Install
 
-From addons.mozilla.org (after review). Requires Firefox 140 or later on desktop.
+From [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/layout-toggle-for-twitter/). Requires Firefox 140 or later on desktop.
 
 ## Settings
 
@@ -27,7 +27,7 @@ Open `about:addons` → Layout Toggle for Twitter → Preferences. Changes apply
 
 ## Privacy
 
-No data is collected or transmitted. Settings stay in your browser. See [PRIVACY.md](PRIVACY.md).
+No data is collected or transmitted. Settings and the items it found on x.com stay in your browser. See [PRIVACY.md](PRIVACY.md).
 
 ## Development
 
@@ -36,7 +36,7 @@ Written in TypeScript. `npm run build` type-checks the sources and bundles them 
 ```sh
 npm install
 npm run build     # type-check, then build dist/
-npm test          # unit tests (detection and promotion logic)
+npm test          # unit tests (detection rules and calculations, without the DOM)
 npm run lint      # build, then web-ext lint on dist/
 npm run package   # build, then make the .zip in web-ext-artifacts/
 ```
