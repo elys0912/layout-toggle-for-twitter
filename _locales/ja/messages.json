@@ -14,7 +14,7 @@
 
   "buttonShowAll": { "message": "すべて表示" },
   "buttonHideAll": { "message": "すべて隠す" },
-  "buttonReset": { "message": "初期状態に戻す" },
+  "buttonReset": { "message": "初期設定に戻す" },
 
   "badgeNew": { "message": "新規" },
 
