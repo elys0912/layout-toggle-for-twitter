@@ -34,7 +34,7 @@ TypeScript で書いている。`npm run build` が型を確かめてから esbu
 ```sh
 npm install
 npm run build     # 型を確かめてから dist/ を作る
-npm test          # 画面に触れない判定と計算のテスト
+npm test          # 画面を書き換えない判定と計算のテスト
 npm run lint      # ビルドしてから dist/ を web-ext lint で検査
 npm run package   # ビルドしてから web-ext-artifacts/ に .zip を作る
 ```
