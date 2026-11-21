@@ -79,11 +79,20 @@ export const SIDEBAR_COLUMN_SELECTOR = '[data-testid="sidebarColumn"]';
 
 export const MORE_BUTTON_SELECTOR = buildTestidSelector(MORE_BUTTON_TESTID);
 
+// X がメニューを出す層。「もっと見る」のメニューもここに出る
+export const LAYERS_SELECTOR = '#layers';
+
 // 「もっと見る」のメニューだけを選ぶ。投稿の「…」など、他のメニューも #layers に出る
-export const MORE_MENU_SELECTOR = `#layers [role="menu"]:has(a${buildTestidSelector(SETTINGS_TESTID)})`;
+export const MORE_MENU_SELECTOR = `${LAYERS_SELECTOR} [role="menu"]:has(a${buildTestidSelector(SETTINGS_TESTID)})`;
 
 // 複製の元にする左メニューの項目。中身の作りが素直な「話題を検索」
 export const CLONE_TEMPLATE_SELECTOR = buildTestidSelector(EXPLORE_TESTID);
+
+// 左メニューの項目のリンク。testid は AppTabBar_ で始まる。「話題を検索」が無いときの複製の元にする
+export const NAV_TAB_LINK_SELECTOR = 'a[data-testid^="AppTabBar_"]';
+
+// 左メニューの項目の名前の部分。幅が狭いと X はこの部分を描かない
+export const NAV_LABEL_BOX_SELECTOR = 'div[dir]';
 
 // nav の外（左メニューの下）にあるボタン
 export const BELOW_NAV_BUTTON_SELECTORS: readonly string[] = NAV_ITEMS.flatMap((item) => (

@@ -1,16 +1,18 @@
 // 「もっと見る」から左メニューへ移す項目を、左メニューの既存の項目を複製して作る。
 // 複製には data-xlt-clone を付け、印付けと移す数の計算から外す。
 
-import { CLONE_TEMPLATE_SELECTOR, MORE_BUTTON_SELECTOR } from '../page-rules.ts';
+import {
+  CLONE_TEMPLATE_SELECTOR,
+  MORE_BUTTON_SELECTOR,
+  NAV_LABEL_BOX_SELECTOR,
+  NAV_TAB_LINK_SELECTOR,
+} from '../page-rules.ts';
 import type { MoreItem } from '../registry.ts';
 
 // 複製に付ける印。値は移す項目の key
 export const CLONE_ATTRIBUTE = 'data-xlt-clone';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-
-// 左メニューの項目の名前の部分。幅が狭いと X はこの部分を描かない
-const LABEL_BOX_SELECTOR = 'div[dir]';
 
 // 複製から外す属性。
 // data-testid：identifyLink が元の項目と取り違えないため。data-xlt：印は scan で付け直すため。
@@ -20,7 +22,7 @@ const CLONE_DROPPED_ATTRIBUTES: readonly string[] = ['data-testid', 'data-xlt', 
 /** 複製の元にする左メニューの項目。中身の作りが素直な「話題を検索」を優先する */
 function pickTemplate(nav: Element): HTMLElement | null {
   return nav.querySelector<HTMLElement>(`:scope > ${CLONE_TEMPLATE_SELECTOR}`)
-    ?? nav.querySelector<HTMLElement>(':scope > a[data-testid^="AppTabBar_"]');
+    ?? nav.querySelector<HTMLElement>(`:scope > ${NAV_TAB_LINK_SELECTOR}`);
 }
 
 /** アイコンを差し替える。アイコンの形を記録できていなければ、複製元のアイコンのまま残す */
@@ -39,7 +41,7 @@ function replaceIcon(clone: Element, iconPaths: readonly string[]): void {
 
 /** 名前を差し替える。幅が狭いと X は名前の部分を描かないので、そのときは何もしない */
 function replaceLabel(clone: Element, label: string): void {
-  const textBox = clone.querySelector(LABEL_BOX_SELECTOR);
+  const textBox = clone.querySelector(NAV_LABEL_BOX_SELECTOR);
   if (!textBox) return;
 
   const [firstSpan, ...restSpans] = textBox.querySelectorAll('span');
@@ -83,7 +85,7 @@ function buildClone(template: HTMLElement, item: MoreItem): HTMLElement {
 }
 
 function hasLabelBox(element: Element | null): boolean {
-  return element?.querySelector(LABEL_BOX_SELECTOR) != null;
+  return element?.querySelector(NAV_LABEL_BOX_SELECTOR) != null;
 }
 
 /**
