@@ -8,7 +8,7 @@ A Firefox add-on that lets you show or hide, one by one:
 
 Optional layout tweaks:
 
-- When you hide left menu items, the same number of items from "More" can move into the left menu (the Post button, the account switcher and "More" itself do not count).
+- When you hide left menu items, the same number of items from "More" can move into the left menu (only the menu items the add-on knows from the start count; the Post button, the account switcher and "More" itself do not).
 - When every right sidebar block is hidden, the timeline can widen into the freed space.
 
 Items are detected by `data-testid` and link paths, not by on-screen text, so it works in any display language.
