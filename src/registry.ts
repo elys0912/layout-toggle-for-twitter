@@ -41,7 +41,7 @@ export interface MoreItem {
 
 const BUILTIN_KEYS: ReadonlySet<string> = new Set(BUILTIN_ITEMS.map((item) => item.key));
 
-// 初期状態で隠す項目。ホームと設定とプライバシーは、隠すと戻る手段が減るので含めない
+// 初期設定で隠す項目。ホームと設定とプライバシーは、隠すと戻る手段が減るので含めない
 export const DEFAULT_HIDDEN: readonly string[] = [
   'nav.grok',
   'nav.premium',
