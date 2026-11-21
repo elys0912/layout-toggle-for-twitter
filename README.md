@@ -36,7 +36,7 @@ Written in TypeScript. `npm run build` type-checks the sources and bundles them 
 ```sh
 npm install
 npm run build     # type-check, then build dist/
-npm test          # unit tests (detection and promotion logic)
+npm test          # unit tests (logic that does not touch the page)
 npm run lint      # build, then web-ext lint on dist/
 npm run package   # build, then make the .zip in web-ext-artifacts/
 ```
