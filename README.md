@@ -19,7 +19,7 @@ This is an independent add-on. It is not affiliated with, endorsed by, or sponso
 
 ## Install
 
-From addons.mozilla.org (after review). Requires Firefox 140 or later on desktop.
+From [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/layout-toggle-for-twitter/). Requires Firefox 140 or later on desktop.
 
 ## Settings
 

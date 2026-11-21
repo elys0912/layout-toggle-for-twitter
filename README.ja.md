@@ -17,7 +17,7 @@ X Corp. とは関係のない個人の拡張。
 
 ## 入れ方
 
-addons.mozilla.org から入れる（審査のあと）。デスクトップ版の Firefox 140 以上が必要。
+[addons.mozilla.org](https://addons.mozilla.org/firefox/addon/layout-toggle-for-twitter/) から入れる。デスクトップ版の Firefox 140 以上が必要。
 
 ## 設定
 
