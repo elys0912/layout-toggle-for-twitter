@@ -21,7 +21,7 @@
   "layoutPromote": { "message": "左メニューの項目を隠した分だけ、「もっと見る」の中の項目を上から順に左メニューへ移す" },
   "layoutWiden": { "message": "右サイドバーのブロックをすべて隠したら、タイムラインを広げる" },
   "noteWidenOff": { "message": "オフのときは、右サイドバーの場所が空いたまま残る。" },
-  "noteWidenWaiting": { "message": "右サイドバーのブロックがすべて隠れるまでは効かない。" },
+  "noteWidenWaiting": { "message": "右サイドバーのブロックが 1 つでも表示されていると効かない。" },
   "noteMoreNotSeen": { "message": "x.com で「もっと見る」を一度開くと、ここに中の項目が並ぶ。" },
 
   "notRunYet": { "message": "まだ x.com で動いていない。x.com のタブを開くか読み込み直すと動き出す。それでも変わらないときは、about:addons でこの拡張が x.com で動くよう許可されているかを確かめて。" },
