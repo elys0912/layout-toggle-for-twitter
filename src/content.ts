@@ -19,7 +19,6 @@ import {
 } from './page-rules.ts';
 import {
   HIDE_DECLARATION,
-  PROMOTED_ATTRIBUTE,
   applyStorageChanges,
   buildHiddenCss,
   resolveLayout,
@@ -27,7 +26,7 @@ import {
   toStoredState,
 } from './registry.ts';
 import { markMoreMenu, markNav, markSidebar } from './content/mark.ts';
-import { applyPromotions, markPromotedInMenu } from './content/promote.ts';
+import { PROMOTED_ATTRIBUTE, applyPromotions, markPromotedInMenu } from './content/promote.ts';
 import { readSeen, recordRun } from './content/seen-store.ts';
 import { getStored, isHidden, replaceStored } from './content/state.ts';
 

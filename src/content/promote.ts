@@ -1,11 +1,14 @@
 // 「もっと見る」から左メニューへ移す項目を決め、複製を置き、メニューの中の元の項目に印を付ける。
 
-import { buildKeyPrefix, isKeyInSection } from '../page-rules.ts';
-import { PROMOTED_ATTRIBUTE, computePromotions, resolveLayout } from '../registry.ts';
+import { LAYERS_SELECTOR, buildKeyPrefix, isKeyInSection } from '../page-rules.ts';
+import { computePromotions, resolveLayout } from '../registry.ts';
 import type { MoreItem } from '../registry.ts';
 import { CLONE_ATTRIBUTE, syncClones } from './clone.ts';
 import { readSeen } from './seen-store.ts';
 import { getStored, isHidden } from './state.ts';
+
+// 左メニューへ移した項目の、「もっと見る」の中の元の項目に付ける印。content.ts の updateCss が、この印の付いた項目を隠す
+export const PROMOTED_ATTRIBUTE = 'data-xlt-promoted';
 
 function listMoreItems(): MoreItem[] {
   return Object.entries(readSeen()).flatMap(([key, entry]) => {
@@ -33,7 +36,7 @@ export function applyPromotions(nav: Element, presentNavKeys: readonly string[])
 
 /** 移した項目の、メニューの中の元の項目に印を付ける */
 export function markPromotedInMenu(promotedKeys: readonly string[]): void {
-  for (const element of document.querySelectorAll<HTMLElement>(`#layers [data-xlt^="${buildKeyPrefix('more')}"]`)) {
+  for (const element of document.querySelectorAll<HTMLElement>(`${LAYERS_SELECTOR} [data-xlt^="${buildKeyPrefix('more')}"]`)) {
     const isPromoted = promotedKeys.includes(element.dataset.xlt ?? '');
     element.toggleAttribute(PROMOTED_ATTRIBUTE, isPromoted);
   }
