@@ -1,6 +1,6 @@
 # Privacy Policy / プライバシーポリシー
 
-Layout Toggle for Twitter — version 0.1.0
+Layout Toggle for Twitter — version 0.1.1
 
 ## English
 
