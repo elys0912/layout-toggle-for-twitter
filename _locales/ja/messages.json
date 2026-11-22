@@ -3,7 +3,7 @@
   "extDescription": { "message": "Twitter（x.com）の左メニュー・「もっと見る」の項目と右サイドバーのブロックを、1 つずつ表示・非表示にする。X Corp. とは関係のない個人の拡張。" },
 
   "optionsTitle": { "message": "Layout Toggle for Twitter の設定" },
-  "optionsOnLabel": { "message": "オンの項目を表示" },
+  "optionsOnLabel": { "message": "オン＝表示" },
   "optionsSaved": { "message": "変更は開いている x.com のタブにすぐ反映される。" },
   "optionsDisclaimer": { "message": "X Corp. とは関係のない個人の拡張。" },
 
@@ -14,14 +14,14 @@
 
   "buttonShowAll": { "message": "すべて表示" },
   "buttonHideAll": { "message": "すべて隠す" },
-  "buttonReset": { "message": "初期状態に戻す" },
+  "buttonReset": { "message": "初期設定に戻す" },
 
   "badgeNew": { "message": "新規" },
 
-  "layoutPromote": { "message": "左メニューを隠した分だけ、「もっと見る」の中から上から順に左メニューへ移す" },
-  "layoutWiden": { "message": "右サイドバーをすべて隠したら、タイムラインを広げる" },
+  "layoutPromote": { "message": "左メニューの項目を隠した分だけ、「もっと見る」の中の項目を上から順に左メニューへ移す" },
+  "layoutWiden": { "message": "右サイドバーのブロックをすべて隠したら、タイムラインを広げる" },
   "noteWidenOff": { "message": "オフのときは、右サイドバーの場所が空いたまま残る。" },
-  "noteWidenWaiting": { "message": "右サイドバーに表示中の項目が残っている間は効かない。" },
+  "noteWidenWaiting": { "message": "右サイドバーのブロックが 1 つでも表示されていると効かない。" },
   "noteMoreNotSeen": { "message": "x.com で「もっと見る」を一度開くと、ここに中の項目が並ぶ。" },
 
   "notRunYet": { "message": "まだ x.com で動いていない。x.com のタブを開くか読み込み直すと動き出す。それでも変わらないときは、about:addons でこの拡張が x.com で動くよう許可されているかを確かめて。" },
