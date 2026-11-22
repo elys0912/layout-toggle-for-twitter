@@ -1,6 +1,6 @@
 // 保存値（storage.local の中身）の形と、DOM を書き換えない判定・計算の関数。
 // content script と設定画面は esbuild でこのファイルを取り込み、テストは node がそのまま読む。
-// x.com の画面の手がかりの表と key の作り方は page-rules.ts に置く。
+// x.com の画面の手がかりの表・DOM を探す selector・key の作り方は page-rules.ts に置く。
 
 import { BUILTIN_ITEMS, NAV_ITEMS, SPACER_KEY } from './page-rules.ts';
 
@@ -41,7 +41,7 @@ export interface MoreItem {
 
 const BUILTIN_KEYS: ReadonlySet<string> = new Set(BUILTIN_ITEMS.map((item) => item.key));
 
-// 初期状態で隠す項目。ホームと設定とプライバシーは、隠すと戻る手段が減るので含めない
+// 初期設定で隠す項目。ホームと設定とプライバシーは、隠すと戻る手段が減るので含めない
 export const DEFAULT_HIDDEN: readonly string[] = [
   'nav.grok',
   'nav.premium',
@@ -55,7 +55,7 @@ export const DEFAULT_HIDDEN: readonly string[] = [
 const DEFAULT_LAYOUT: Layout = { widen: false, promote: true };
 
 // 隠すと「もっと見る」から 1 つ移せる左メニューの項目。ボタン類と、もっと見る自体は数えない
-export const SLOT_KEYS: readonly string[] = NAV_ITEMS
+const SLOT_KEYS: readonly string[] = NAV_ITEMS
   .filter((item) => item.button === undefined)
   .map((item) => item.key);
 
@@ -116,9 +116,6 @@ export function shouldWiden(input: {
 
 // 隠すときの宣言。X の CSS より優先させるため !important を付ける
 export const HIDE_DECLARATION = 'display:none!important';
-
-// 左メニューへ移した項目の、「もっと見る」の中の元の項目に付ける印。content script の CSS でこの印の付いた項目を隠す
-export const PROMOTED_ATTRIBUTE = 'data-xlt-promoted';
 
 /**
  * 隠す項目の CSS。key は見出しの文字を含みうるので、CSS の文字列としてエスケープする。

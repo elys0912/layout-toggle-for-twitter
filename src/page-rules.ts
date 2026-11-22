@@ -1,6 +1,6 @@
 // x.com の画面の手がかりの表（項目の見分け方と、content script が DOM を探す selector）と、項目の key の作り方。
 // X が画面を変えたら、このファイルを直す。保存値と設定の判定は registry.ts に置く。
-// 項目を足したら _locales の item_<区切り>_<名前> も足す。初期で隠すなら registry.ts の DEFAULT_HIDDEN にも足す。
+// 項目を足したら _locales の item_<区切り>_<名前> も足す。初期設定で隠すなら registry.ts の DEFAULT_HIDDEN にも足す。
 // 見分け方は 2026-10-29 に x.com/home（日本語表示）の DOM を読んで決めた。
 
 /** リンクの見分け方。by で、リンクのどの属性を比べるかを決める */
@@ -70,7 +70,7 @@ export const MORE_ITEMS: readonly LinkRule[] = [
   { key: 'more.settings', by: 'testid', testid: SETTINGS_TESTID },
 ];
 
-// --- content script が DOM を探す selector。testid を使うものは、見分け方の表と同じ定数から作る ---
+// --- content script が DOM を探す selector。見分け方の表と同じ testid を使うものは、表と同じ定数から作る ---
 
 export const HEADER_SELECTOR = 'header[role="banner"]';
 export const NAV_SELECTOR = 'nav[role="navigation"]';
@@ -79,11 +79,21 @@ export const SIDEBAR_COLUMN_SELECTOR = '[data-testid="sidebarColumn"]';
 
 export const MORE_BUTTON_SELECTOR = buildTestidSelector(MORE_BUTTON_TESTID);
 
+// X がメニューなどを重ねて出す層。「もっと見る」のメニューもここに出る
+export const LAYERS_SELECTOR = '#layers';
+
 // 「もっと見る」のメニューだけを選ぶ。投稿の「…」など、他のメニューも #layers に出る
-export const MORE_MENU_SELECTOR = `#layers [role="menu"]:has(a${buildTestidSelector(SETTINGS_TESTID)})`;
+export const MORE_MENU_SELECTOR = `${LAYERS_SELECTOR} [role="menu"]:has(a${buildTestidSelector(SETTINGS_TESTID)})`;
 
 // 複製の元にする左メニューの項目。中身の作りが素直な「話題を検索」
 export const CLONE_TEMPLATE_SELECTOR = buildTestidSelector(EXPLORE_TESTID);
+
+// 左メニューの項目のうち、testid が AppTabBar_ で始まるリンク（Grok・履歴・Premium は当たらない）。
+// 「話題を検索」が無いときの複製の元にする
+export const NAV_TAB_LINK_SELECTOR = 'a[data-testid^="AppTabBar_"]';
+
+// 左メニューの項目の名前の部分。幅が狭いと X はこの部分を描かない
+export const NAV_LABEL_BOX_SELECTOR = 'div[dir]';
 
 // nav の外（左メニューの下）にあるボタン
 export const BELOW_NAV_BUTTON_SELECTORS: readonly string[] = NAV_ITEMS.flatMap((item) => (
